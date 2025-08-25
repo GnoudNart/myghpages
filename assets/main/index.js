@@ -1,28 +1,1154 @@
-System.register("chunks:///_virtual/AudioMgr.ts",["./rollupPluginModLoBabelHelpers.js","cc"],(function(i){var o,u,t,e,n,s,c;return{setters:[function(i){o=i.createClass},function(i){u=i.cclegacy,t=i.AudioClip,e=i.resources,n=i.Node,s=i.director,c=i.AudioSource}],execute:function(){u._RF.push({},"d9f83yiv9tBg4hUQT44i1FG","AudioMgr",void 0),i("AudioMgr",function(){function i(){this.isEnableSound=!0,this.isEnableMusic=!0,this._audioSource=void 0;var i=new n;i.name="__audioMgr__",s.getScene().addChild(i),s.addPersistRootNode(i),this._audioSource=i.addComponent(c),this._audioSource.playOnAwake=!1}var u=i.prototype;return u.playOneShot=function(i,o){var u=this;void 0===o&&(o=1),this.isEnableSound&&(i instanceof t?this._audioSource.playOneShot(i,o):e.load(i,(function(i,t){i?console.log(i):u._audioSource.playOneShot(t,o)})))},u.play=function(i,o){var u=this;void 0===o&&(o=1),i instanceof t?(this._audioSource.stop(),this._audioSource.clip=i,this._audioSource.play(),this.audioSource.volume=o):e.load(i,(function(i,t){i?console.log(i):(u._audioSource.stop(),u._audioSource.clip=t,u._audioSource.play(),u.audioSource.volume=o,u.audioSource.loop=!0)}))},u.stop=function(){this._audioSource.stop()},u.pause=function(){this._audioSource.pause()},u.resume=function(){this._audioSource.play()},u.toggleMusic=function(){this.isEnableMusic=!this.isEnableMusic,this.checkPlayMusic()},u.toggleSound=function(){this.isEnableSound=!this.isEnableSound},u.checkPlayMusic=function(){this.isEnableMusic?this.audioSource.playing||this.play("audio/bg_music"):this.stop()},o(i,[{key:"audioSource",get:function(){return this._audioSource}}],[{key:"inst",get:function(){return null==this._inst&&(this._inst=new i),this._inst}}]),i}())._inst=void 0,u._RF.pop()}}}));
+System.register("chunks:///_virtual/Car.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
+  var _inheritsLoose, cclegacy, js, _decorator, randomRangeInt, Input, Sprite, BoxCollider2D, RigidBody2D, ProgressBar, lerp, Vec2, tween, UIOpacity, Component, GameManager;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      js = module.js;
+      _decorator = module._decorator;
+      randomRangeInt = module.randomRangeInt;
+      Input = module.Input;
+      Sprite = module.Sprite;
+      BoxCollider2D = module.BoxCollider2D;
+      RigidBody2D = module.RigidBody2D;
+      ProgressBar = module.ProgressBar;
+      lerp = module.lerp;
+      Vec2 = module.Vec2;
+      tween = module.tween;
+      UIOpacity = module.UIOpacity;
+      Component = module.Component;
+    }, function (module) {
+      GameManager = module.GameManager;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "ac604KdUDdKOZQQpWebJt7+", "Car", undefined);
+      var IDGenerator = js.IDGenerator;
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var CarState = exports('CarState', /*#__PURE__*/function (CarState) {
+        CarState[CarState["UNDEFINED"] = -1] = "UNDEFINED";
+        CarState[CarState["MOVE_IN"] = 0] = "MOVE_IN";
+        CarState[CarState["PARKING"] = 1] = "PARKING";
+        CarState[CarState["PARKED"] = 2] = "PARKED";
+        CarState[CarState["MOVE_OUT"] = 3] = "MOVE_OUT";
+        return CarState;
+      }({}));
+      var Car = exports('Car', (_dec = ccclass('Car'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(Car, _Component);
+        function Car() {
+          var _this;
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+          _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+          _this.sprCar = void 0;
+          _this.sprCheck = void 0;
+          _this.pbTimer = void 0;
+          _this.path = void 0;
+          _this.speed = void 0;
+          _this.angle = void 0;
+          _this._isReverse = false;
+          _this._isParked = false;
+          _this._isDriverInside = true;
+          _this._isGettingOut = false;
+          _this._isOut = false;
+          _this._isStart = true;
+          _this._carId = void 0;
+          _this.boxCollider = void 0;
+          _this.rigidBody = void 0;
+          _this._lastTimeTurnAround = 0;
+          _this._state = CarState.UNDEFINED;
+          _this._timeParking = void 0;
+          return _this;
+        }
+        var _proto = Car.prototype;
+        _proto.onLoad = function onLoad() {
+          this.angle = randomRangeInt(0, 359);
+          this.speed = randomRangeInt(50, 300);
+          console.log("Car::onLoad", this.angle);
+          this.node.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
+          this.node.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
+          this.node.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
+          this.node.on(Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+          this.sprCar = this.node.getChildByName("sprCar").getComponent(Sprite);
+          this.path = GameManager.getInstance().getPathManager().getPath();
+          this._carId = IDGenerator.global.getNewId();
+          this.boxCollider = this.node.getComponent(BoxCollider2D);
+          this.rigidBody = this.node.getComponent(RigidBody2D);
+          this._timeParking = randomRangeInt(5000, 10000);
+          this.pbTimer = this.node.getChildByName("pbTimer").getComponent(ProgressBar);
+          this.sprCheck = this.node.getChildByName("sprCheck").getComponent(Sprite);
+          this.sprCheck.node.active = false;
+          this.pbTimer.node.active = false;
+          this.pbTimer.progress = 0;
+          // this.rigidBody.gravityScale = 0;
+        };
 
-System.register("chunks:///_virtual/Cube.ts",["./rollupPluginModLoBabelHelpers.js","cc","./CubeConst.ts","./Utilities.ts","./GameMgr.ts","./AudioMgr.ts"],(function(t){var i,o,e,s,n,r,h,a,c,d,l,g,p,u,m,v,y,b,f,T,S,x,C,I;return{setters:[function(t){i=t.inheritsLoose},function(t){o=t.cclegacy,e=t._decorator,s=t.resources,n=t.SpriteFrame,r=t.v3,h=t.input,a=t.Input,c=t.UITransform,d=t.Vec3,l=t.v2,g=t.Sprite,p=t.Label,u=t.Rect,m=t.Color,v=t.tween,y=t.UIOpacity,b=t.color,f=t.Component},function(t){T=t.CUBE_TYPE,S=t.CUBE_SIZE},function(t){x=t.randomInt},function(t){C=t.GameMgr},function(t){I=t.AudioMgr}],execute:function(){var L;o._RF.push({},"94a41TpmgZKM5JJaeGLpAKN","Cube",void 0);var M=e.ccclass;e.property,t("Cube",M("Cube")(L=function(t){function o(){for(var i,o=arguments.length,e=new Array(o),s=0;s<o;s++)e[s]=arguments[s];return(i=t.call.apply(t,[this].concat(e))||this).index=void 0,i.y=void 0,i.x=void 0,i.handler=void 0,i.type=void 0,i.sprSymbol=void 0,i.sprSymbolTemp=void 0,i.sprBg=void 0,i.lbTemp=void 0,i.selected=!1,i._isMovable=void 0,i.spriteFrameX=void 0,i.spriteFrameO=void 0,i.boardWidth=void 0,i.boardHeight=void 0,i.isInside=!0,i.savedPos=void 0,i.worldPos=void 0,i.ignoreTouch=!1,i.isDragging=!1,i.isInDirector=!1,i.moves=void 0,i.moveRects=void 0,i}i(o,t);var e=o.prototype;return e.onLoad=function(){var t=this;this.initChild(),s.load("textures/game/img_x/spriteFrame",n,(function(i,o){t.spriteFrameX=o})),s.load("textures/game/img_o/spriteFrame",n,(function(i,o){t.spriteFrameO=o}));var i=x(0,4),o="textures/game/img_wood_"+i+"/spriteFrame";s.load(o,n,(function(i,o){t.sprBg.spriteFrame=o}));var e=Math.random()>=.5;console.log("AGA: ",e,i),this.sprBg.spriteFrame.flipUVX=!0,this.sprBg.node.scale=r(Math.random()>=.5?1:-1,1,1),h.on(a.EventType.TOUCH_START,this.onTouchStart,this),h.on(a.EventType.TOUCH_MOVE,this.onTouchMove,this),h.on(a.EventType.TOUCH_END,this.onTouchEnd,this),h.on(a.EventType.TOUCH_CANCEL,this.onTouchCancel,this)},e.onTouchStart=function(t){if(this.node.getComponent(c).hitTest(t.getLocation())){if(this.isInside)return this.fadeInvalid(),this.isDragging=!1,void I.inst.playOneShot("audio/cube_block");if(this.type!=T.blank&&this.type!=C.getInstance().getActivePlayer())return this.fadeInvalid(),this.isDragging=!1,void I.inst.playOneShot("audio/cube_block");if(C.getInstance().isVsBot()&&!C.getInstance().isPlayerTurn())return this.fadeInvalid(),this.isDragging=!1,void I.inst.playOneShot("audio/cube_block");this.isDragging=!0,I.inst.playOneShot("audio/cube_pick"),this.savedPos=new d(this.node.position),this.node.setSiblingIndex(99),this.worldPos=new d(this.node.getWorldPosition()),this.handler.onTouchCube(this),this.isMovable()&&(this.ignoreTouch=!0)}else this.isDragging=!1},e.onTouchMove=function(t){var i=this;if(!this.ignoreTouch&&this.isDragging){this.isSelected()||this.handler.selectCube(this);var o=t.getUILocation().subtract(l(this.worldPos.x,this.worldPos.y)).add(l(this.savedPos.x,this.savedPos.y));this.node.position=r(o.x,o.y,5);var e=!1;this.moveRects.forEach((function(t){t.contains(o)&&(i.node.position=r(t.center.x,t.center.y,5),e=!0,i.isInDirector||I.inst.playOneShot("audio/wood_hit"))})),this.isInDirector=e}},e.onTouchEnd=function(t){var i=this;this.ignoreTouch?this.ignoreTouch=!1:this.isDragging&&(console.log(t.getLocation()),console.log(t.getUILocation()),this.ignoreTouch=!1,this.node.setSiblingIndex(20),this.moveRects.forEach((function(t,o){t.contains(l(i.node.position.x,i.node.position.y))&&C.getInstance().move(i.x,i.y,i.moves[o])})),this.node.position=this.savedPos)},e.onTouchCancel=function(t){this.ignoreTouch?this.ignoreTouch=!1:this.isDragging&&(this.ignoreTouch=!1,this.node.position=this.savedPos,console.log(t.getLocation()),console.log(t.getUILocation()))},e.onMouseDown=function(t){console.log(t.getLocation()),console.log(t.getUILocation())},e.onMouseMove=function(t){console.log(t.getLocation()),console.log(t.getUILocation())},e.onMouseUp=function(t){console.log(t.getLocation()),console.log(t.getUILocation())},e.initChild=function(){this.sprSymbol=this.node.getChildByName("sprSymbol").getComponent(g),this.sprSymbolTemp=this.node.getChildByName("sprSymbolTemp").getComponent(g),this.sprBg=this.node.getChildByName("sprBg").getComponent(g),this.lbTemp=this.node.getChildByName("lbTemp").getComponent(p)},e.start=function(){},e.update=function(t){},e.setBoardSize=function(t,i){this.boardWidth=t,this.boardHeight=i,console.log("ASD:",t,i)},e.setLocation=function(t,i){var o=this;this.x=t,this.y=i,this.lbTemp.string="("+t+","+i+")";this.moves=[0,1,2,3];var e=new u((this.y-this.boardWidth/2)*S.x,this.boardHeight/2*S.y,S.x,S.y),s=new u((this.y-this.boardWidth/2)*S.x,(-this.boardHeight/2-1)*S.y,S.x,S.y),n=new u((-this.boardWidth/2-1)*S.x,(-this.x+this.boardHeight/2-1)*S.y,S.x,S.y),r=new u(this.boardWidth/2*S.x,(-this.x+this.boardHeight/2-1)*S.y,S.x,S.y);this.moveRects=[e,s,n,r],this.moveRects.forEach((function(t){t.x=t.x-30,t.y=t.y-30,t.width=t.width+60,t.height=t.height+60}));var h=function(t){var i=o.moves.indexOf(t);i>=0&&(o.moves.splice(i,1),o.moveRects.splice(i,1))};0===t&&h(0),t===this.boardHeight-1&&h(1),0===i&&h(2),i===this.boardWidth-1&&h(3),this.isInside=!0,0!==t&&t!==this.boardHeight-1&&0!==i&&i!==this.boardWidth-1||(this.isInside=!1)},e.getLocation=function(){return{x:this.x,y:this.y}},e.onTouch=function(t,i){},e.setHandler=function(t){this.handler=t},e.clear=function(){this.type=T.blank,this.sprSymbol.node.active=!1,this.sprSymbolTemp.node.active=!1},e.setType=function(t){this.type=t,this.type==T.x?(this.sprSymbol.spriteFrame=this.spriteFrameX,this.sprSymbol.node.active=!0):this.type==T.o&&(this.sprSymbol.spriteFrame=this.spriteFrameO,this.sprSymbol.node.active=!0),this.sprSymbol.spriteFrame.flipUVX=Math.random()>=.5},e.getType=function(){return this.type},e.setSelected=function(t){this.selected=t,t?this.sprBg.color=m.YELLOW:(this.sprBg.color=m.WHITE,this.sprSymbolTemp.node.active=!1)},e.forceDrop=function(){this.isDragging&&(this.node.position=this.savedPos,this.isDragging=!1)},e.setTempActive=function(t){t==T.x?this.sprSymbolTemp.spriteFrame=this.spriteFrameX:t==T.o&&(this.sprSymbolTemp.spriteFrame=this.spriteFrameO),this.sprSymbolTemp.node.active=!0},e.isSelected=function(){return this.selected},e.setMoveable=function(t){this._isMovable=t,this.sprBg.color=t?m.GREEN:m.WHITE},e.isMovable=function(){return this._isMovable},e.fadeInvalid=function(){v(this.getComponent(y)).to(.1,{opacity:200}).delay(.2).to(.1,{opacity:255}).start()},e.blinkGreen=function(){v(this.sprBg).to(.1,{color:b(0,255,0,255)}).delay(.1).to(.1,{color:b(255,255,255,255)}).delay(.1).to(.1,{color:b(0,255,0,255)}).delay(.1).to(.1,{color:b(255,255,255,255)}).start()},o}(f))||L);o._RF.pop()}}}));
+        _proto.getCarId = function getCarId() {
+          return this._carId;
+        };
+        _proto.getPath = function getPath() {
+          return this.path;
+        };
+        _proto.onTouchStart = function onTouchStart(event) {
+          if (this._state === CarState.PARKING) {
+            return;
+          }
+          if (!this._isDriverInside) {
+            return;
+          }
+          if (this._isParked) {
+            this._isGettingOut = true;
+            this.path.setIsGettingOut(this._isGettingOut);
+          }
+          var target = event.target;
+          var startPos = event.getUILocation();
+          this.path.onTouchStart(event);
+          // this.path.length = 0;
+          // console.log("Start pos: ", startPos);
+          // this.path.push(startPos);
+          // this.graphics.clear();
+          // this.graphics.strokeColor = Color.WHITE;
+          // this.graphics.lineWidth = 5;
+          // this.graphics.moveTo(startPos.x - this.node.x, startPos.y - this.node.y - this.node.getComponent(UITransform).height / 2);
+        };
 
-System.register("chunks:///_virtual/CubeConst.ts",["cc"],(function(t){var e,c;return{setters:[function(t){e=t.cclegacy,c=t.v3}],execute:function(){e._RF.push({},"f5c44gT6CRExrFM/98YUINy","CubeConst",void 0);t("CUBE_SIZE",c(100,100,100)),t("CUBE_TYPE",{blank:0,x:1,o:2});e._RF.pop()}}}));
+        _proto.onTouchMove = function onTouchMove(event) {
+          this.path.onTouchMove(event);
+          // const minDelta = 5;
+          // let lastPath = this.path[this.path.length - 1];
+          // let currentPos = event.getUILocation();
+          // if (Math.abs(currentPos.x - lastPath.x) > minDelta || Math.abs(currentPos.y - lastPath.y) > minDelta) {
 
-System.register("chunks:///_virtual/debug-view-runtime-control.ts",["./rollupPluginModLoBabelHelpers.js","cc"],(function(t){var e,o,i,n,s,l,r,a,g,h,p,c,C,d,m,u,L;return{setters:[function(t){e=t.applyDecoratedDescriptor,o=t.inheritsLoose,i=t.initializerDefineProperty,n=t.assertThisInitialized},function(t){s=t.cclegacy,l=t._decorator,r=t.Node,a=t.Color,g=t.Canvas,h=t.UITransform,p=t.instantiate,c=t.Label,C=t.RichText,d=t.Toggle,m=t.Button,u=t.director,L=t.Component}],execute:function(){var f,M,b,v,T,S,x,E,I;s._RF.push({},"b2bd1+njXxJxaFY3ymm06WU","debug-view-runtime-control",void 0);var A=l.ccclass,y=l.property;t("DebugViewRuntimeControl",(f=A("internal.DebugViewRuntimeControl"),M=y(r),b=y(r),v=y(r),f((x=e((S=function(t){function e(){for(var e,o=arguments.length,s=new Array(o),l=0;l<o;l++)s[l]=arguments[l];return e=t.call.apply(t,[this].concat(s))||this,i(e,"compositeModeToggle",x,n(e)),i(e,"singleModeToggle",E,n(e)),i(e,"EnableAllCompositeModeButton",I,n(e)),e._single=0,e.strSingle=["No Single Debug","Vertex Color","Vertex Normal","Vertex Tangent","World Position","Vertex Mirror","Face Side","UV0","UV1","UV Lightmap","Project Depth","Linear Depth","Fragment Normal","Fragment Tangent","Fragment Binormal","Base Color","Diffuse Color","Specular Color","Transparency","Metallic","Roughness","Specular Intensity","IOR","Direct Diffuse","Direct Specular","Direct All","Env Diffuse","Env Specular","Env All","Emissive","Light Map","Shadow","AO","Fresnel","Direct Transmit Diffuse","Direct Transmit Specular","Env Transmit Diffuse","Env Transmit Specular","Transmit All","Direct Internal Specular","Env Internal Specular","Internal All","Fog"],e.strComposite=["Direct Diffuse","Direct Specular","Env Diffuse","Env Specular","Emissive","Light Map","Shadow","AO","Normal Map","Fog","Tone Mapping","Gamma Correction","Fresnel","Transmit Diffuse","Transmit Specular","Internal Specular","TT"],e.strMisc=["CSM Layer Coloration","Lighting With Albedo"],e.compositeModeToggleList=[],e.singleModeToggleList=[],e.miscModeToggleList=[],e.textComponentList=[],e.labelComponentList=[],e.textContentList=[],e.hideButtonLabel=void 0,e._currentColorIndex=0,e.strColor=["<color=#ffffff>","<color=#000000>","<color=#ff0000>","<color=#00ff00>","<color=#0000ff>"],e.color=[a.WHITE,a.BLACK,a.RED,a.GREEN,a.BLUE],e}o(e,t);var s=e.prototype;return s.start=function(){if(this.node.parent.getComponent(g)){var t=this.node.parent.getComponent(h),e=.5*t.width,o=.5*t.height,i=.1*e-e,n=o-.1*o,s=this.node.getChildByName("MiscMode"),l=p(s);l.parent=this.node,l.name="Buttons";var r=p(s);r.parent=this.node,r.name="Titles";for(var u=0;u<2;u++){var L=p(this.EnableAllCompositeModeButton.getChildByName("Label"));L.setPosition(i+(u>0?450:150),n,0),L.setScale(.75,.75,.75),L.parent=r;var f=L.getComponent(c);f.string=u?"----------Composite Mode----------":"----------Single Mode----------",f.color=a.WHITE,f.overflow=0,this.labelComponentList[this.labelComponentList.length]=f}n-=20;for(var M=0,b=0;b<this.strSingle.length;b++,M++){b===this.strSingle.length>>1&&(i+=200,M=0);var v=b?p(this.singleModeToggle):this.singleModeToggle;v.setPosition(i,n-20*M,0),v.setScale(.5,.5,.5),v.parent=this.singleModeToggle.parent;var T=v.getComponentInChildren(C);T.string=this.strSingle[b],this.textComponentList[this.textComponentList.length]=T,this.textContentList[this.textContentList.length]=T.string,v.on(d.EventType.TOGGLE,this.toggleSingleMode,this),this.singleModeToggleList[b]=v}i+=200,this.EnableAllCompositeModeButton.setPosition(i+15,n,0),this.EnableAllCompositeModeButton.setScale(.5,.5,.5),this.EnableAllCompositeModeButton.on(m.EventType.CLICK,this.enableAllCompositeMode,this),this.EnableAllCompositeModeButton.parent=l;var S=this.EnableAllCompositeModeButton.getComponentInChildren(c);this.labelComponentList[this.labelComponentList.length]=S;var x=p(this.EnableAllCompositeModeButton);x.setPosition(i+90,n,0),x.setScale(.5,.5,.5),x.on(m.EventType.CLICK,this.changeTextColor,this),x.parent=l,(S=x.getComponentInChildren(c)).string="TextColor",this.labelComponentList[this.labelComponentList.length]=S;var E=p(this.EnableAllCompositeModeButton);E.setPosition(i+200,n,0),E.setScale(.5,.5,.5),E.on(m.EventType.CLICK,this.hideUI,this),E.parent=this.node.parent,(S=E.getComponentInChildren(c)).string="Hide UI",this.labelComponentList[this.labelComponentList.length]=S,this.hideButtonLabel=S,n-=40;for(var I=0;I<this.strMisc.length;I++){var A=p(this.compositeModeToggle);A.setPosition(i,n-20*I,0),A.setScale(.5,.5,.5),A.parent=s;var y=A.getComponentInChildren(C);y.string=this.strMisc[I],this.textComponentList[this.textComponentList.length]=y,this.textContentList[this.textContentList.length]=y.string,A.getComponent(d).isChecked=!!I,A.on(d.EventType.TOGGLE,I?this.toggleLightingWithAlbedo:this.toggleCSMColoration,this),this.miscModeToggleList[I]=A}n-=150;for(var D=0;D<this.strComposite.length;D++){var B=D?p(this.compositeModeToggle):this.compositeModeToggle;B.setPosition(i,n-20*D,0),B.setScale(.5,.5,.5),B.parent=this.compositeModeToggle.parent;var w=B.getComponentInChildren(C);w.string=this.strComposite[D],this.textComponentList[this.textComponentList.length]=w,this.textContentList[this.textContentList.length]=w.string,B.on(d.EventType.TOGGLE,this.toggleCompositeMode,this),this.compositeModeToggleList[D]=B}}else console.error("debug-view-runtime-control should be child of Canvas")},s.isTextMatched=function(t,e){var o=new String(t),i=o.search(">");return-1===i?t===e:(o=(o=o.substr(i+1)).substr(0,o.search("<")))===e},s.toggleSingleMode=function(t){for(var e=u.root.debugView,o=t.getComponentInChildren(C),i=0;i<this.strSingle.length;i++)this.isTextMatched(o.string,this.strSingle[i])&&(e.singleMode=i)},s.toggleCompositeMode=function(t){for(var e=u.root.debugView,o=t.getComponentInChildren(C),i=0;i<this.strComposite.length;i++)this.isTextMatched(o.string,this.strComposite[i])&&e.enableCompositeMode(i,t.isChecked)},s.toggleLightingWithAlbedo=function(t){u.root.debugView.lightingWithAlbedo=t.isChecked},s.toggleCSMColoration=function(t){u.root.debugView.csmLayerColoration=t.isChecked},s.enableAllCompositeMode=function(t){var e=u.root.debugView;e.enableAllCompositeMode(!0);for(var o=0;o<this.compositeModeToggleList.length;o++){this.compositeModeToggleList[o].getComponent(d).isChecked=!0}var i=this.miscModeToggleList[0].getComponent(d);i.isChecked=!1,e.csmLayerColoration=!1,(i=this.miscModeToggleList[1].getComponent(d)).isChecked=!0,e.lightingWithAlbedo=!0},s.hideUI=function(t){var e=this.node.getChildByName("Titles"),o=!e.active;this.singleModeToggleList[0].parent.active=o,this.miscModeToggleList[0].parent.active=o,this.compositeModeToggleList[0].parent.active=o,this.EnableAllCompositeModeButton.parent.active=o,e.active=o,this.hideButtonLabel.string=o?"Hide UI":"Show UI"},s.changeTextColor=function(t){this._currentColorIndex++,this._currentColorIndex>=this.strColor.length&&(this._currentColorIndex=0);for(var e=0;e<this.textComponentList.length;e++)this.textComponentList[e].string=this.strColor[this._currentColorIndex]+this.textContentList[e]+"</color>";for(var o=0;o<this.labelComponentList.length;o++)this.labelComponentList[o].color=this.color[this._currentColorIndex]},s.onLoad=function(){},s.update=function(t){},e}(L)).prototype,"compositeModeToggle",[M],{configurable:!0,enumerable:!0,writable:!0,initializer:function(){return null}}),E=e(S.prototype,"singleModeToggle",[b],{configurable:!0,enumerable:!0,writable:!0,initializer:function(){return null}}),I=e(S.prototype,"EnableAllCompositeModeButton",[v],{configurable:!0,enumerable:!0,writable:!0,initializer:function(){return null}}),T=S))||T));s._RF.pop()}}}));
+          //     console.log("Move pos: ", currentPos);
+          //     this.path.push(currentPos);
+          //     this.graphics.lineTo(currentPos.x - this.node.x, currentPos.y - this.node.y - this.node.getComponent(UITransform).height / 2);
+          // }
+          // this.graphics.stroke();
+        };
 
-System.register("chunks:///_virtual/GameConst.ts",["cc"],(function(N){var e;return{setters:[function(N){e=N.cclegacy}],execute:function(){e._RF.push({},"60a32XifnRFPbx2Z1QuNPRq","GameConst",void 0);N("GamePhase",function(N){return N[N.UNDEFINED=-1]="UNDEFINED",N[N.STARTING=0]="STARTING",N[N.PLAYING=1]="PLAYING",N[N.ENDING=2]="ENDING",N[N.PAUSING=3]="PAUSING",N}({})),N("GameMode",function(N){return N[N.UNDEFINED=-1]="UNDEFINED",N[N.TWO_PLAYER=0]="TWO_PLAYER",N[N.VS_BOT=1]="VS_BOT",N}({}));e._RF.pop()}}}));
+        _proto.onTouchEnd = function onTouchEnd(event) {
+          this.path.onTouchEnd(event);
+          // console.log("End pos: ", event.getUILocation());
+          // this.path.push(event.getUILocation());
+          // console.log("Current path: ", this.path);
+        };
 
-System.register("chunks:///_virtual/GameMgr.ts",["cc","./CubeConst.ts","./MiniMaxGame.ts","./MiniMaxPlayer.ts","./AudioMgr.ts","./GameConst.ts"],(function(t){var e,i,s,h,o,r,n,a;return{setters:[function(t){e=t.cclegacy},function(t){i=t.CUBE_TYPE},function(t){s=t.InvestigateGame,h=t.Move},function(t){o=t.AlphaBetaMiniMaxPlayer},function(t){r=t.AudioMgr},function(t){n=t.GameMode,a=t.GamePhase}],execute:function(){e._RF.push({},"d3c26NdRoVNOab+1TeX7Gsw","GameMgr",void 0),t("GameMgr",function(){function t(){this.currentPhase=void 0,this.gameMode=void 0,this.playerSymbol=i.o,this.botLevel=void 0,this.bot=void 0,this.bot2=void 0,this.activePlayer=void 0,this.timeoutTurn=30,this.sceneGame=void 0,this.idTimeOutBotMove=void 0,this.gameTime=void 0,this.turnTime=void 0,this.phaseTime=void 0,this.width=5,this.height=5,this.grid=void 0,this.lastTimeCounted=void 0,this.lengthWin=5,this.historyMove=void 0,this.lastPhase=void 0}t.getInstance=function(){return this._instance||(this._instance=new t),this._instance};var e=t.prototype;return e.getCurrentPhase=function(){return this.currentPhase},e.setCurrentPhase=function(t){this.currentPhase=t},e.isPhase=function(t){return this.getCurrentPhase()===t},e.getGameMode=function(){return this.gameMode},e.setGameMode=function(t){this.gameMode=t},e.isGameMode=function(t){return this.getGameMode()===t},e.isVsBot=function(){return this.isGameMode(n.VS_BOT)},e.swapPlayerSymbol=function(){this.getPlayerSymbol()===i.o?this.setPlayerSymbol(i.x):this.setPlayerSymbol(i.o)},e.setPlayerSymbol=function(t){this.playerSymbol=t},e.getPlayerSymbol=function(){return this.playerSymbol},e.setActivePlayer=function(t){this.activePlayer=t},e.getActivePlayer=function(){return this.activePlayer},e.isPlayerTurn=function(){return this.getActivePlayer()===this.getPlayerSymbol()},e.setBotLevel=function(t){this.botLevel=t;var e=1;1==t&&(e=2),2==t&&(e=3),3==t&&(e=4),this.bot=new o(e,!1,!0),e>1&&this.bot.setConcessionProperties(!0,3,3),4===t&&this.bot.setConcessionProperties(!0,4,4)},e.getBotMove=function(t,e){var i,r=new s;r.setBoard(t),r.setCurrentPlayerIdx(e),0===this.botLevel&&this.historyMove.length<20?(this.bot2||(this.bot2=new o(2,!1,!0),this.bot2.setConcessionProperties(!0,3,3)),i=this.bot2.makeMove(r)):i=this.bot.makeMove(r);var n=i,a=n[0],c=n[1];a[0],a[1];switch(c){case h.BOTTOM:4;break;case h.TOP:0;break;case h.LEFT:0;break;case h.RIGHT:4}return[a[0],a[1],c]},e.setTimeoutTurn=function(t){this.timeoutTurn=t},e.getTimeoutTurn=function(){return this.timeoutTurn},e.resetGameTime=function(){this.gameTime=0,this.turnTime=0,this.phaseTime=0},e.startGame=function(){this.resetGameTime(),this.setCurrentPhase(a.PLAYING),this.setActivePlayer(i.x),this.grid=[],this.historyMove=[];for(var t=0;t<this.height;++t){for(var e=[],s=0;s<this.width;++s)e.push(i.blank);this.grid.push(e)}this.isVsBot()&&this.setPlayerSymbol(i.x)},e.setSceneGame=function(t){this.sceneGame=t},e.move=function(t,e,s){var o=this;if(console.log("Move : ",t,e,s),0!==t&&t!==this.height-1&&0!==e&&e!==this.width-1)return console.log("Invalid X - Y: ",t,e,this.width,this.height),!1;switch(this.grid[t][e]!==i.blank&&this.grid[t][e]!==this.activePlayer&&console.log("Invalid Symbol: ",this.grid[t][e]),s){case h.TOP:if(0===t)return console.log("Invalid move top",t,e),!1;break;case h.BOTTOM:if(t===this.height-1)return console.log("Invalid move bottom",t,e),!1;break;case h.LEFT:if(0===e)return console.log("Invalid move left: ",t,e),!1;break;case h.RIGHT:if(e===this.width-1)return console.log("Invalid move right",t,e),!1}var r=this.grid[t][e],n=this.activePlayer;switch(s){case h.TOP:for(var c=t;c>0;c--)this.grid[c][e]=this.grid[c-1][e];this.grid[0][e]=n;break;case h.BOTTOM:for(var l=t;l<this.height-1;l++)this.grid[l][e]=this.grid[l+1][e];this.grid[this.height-1][e]=n;break;case h.LEFT:for(var u=e;u>0;u--)this.grid[t][u]=this.grid[t][u-1];this.grid[t][0]=n;break;case h.RIGHT:for(var v=e;v<this.width-1;v++)this.grid[t][v]=this.grid[t][v+1];this.grid[t][this.width-1]=n}console.log("GRID after move:");for(var g=0;g<this.height;++g){for(var d="",m=0;m<this.width;++m)d+=this.grid[g][m]+" ";console.log(d)}console.log("MOVE: ",t,e,s,this.activePlayer,r),this.historyMove.push([t,e,s,r]),this.sceneGame.doMove(t,e,s);var f=this.checkWinner();return f?(this.setCurrentPhase(a.ENDING),clearTimeout(this.idTimeOutBotMove),setTimeout((function(){o.sceneGame.showWinner(f)}),1500)):this.swapTurn(),!0},e.update=function(t){if(!this.isPhase(a.ENDING)&&!this.isPhase(a.PAUSING))switch(this.gameTime+=t,this.turnTime+=t,this.phaseTime+=t,this.getGameMode()){case n.TWO_PLAYER:var e=this.getTimeoutTurn(),s=Math.floor(e-this.turnTime);if(s<=0)this.swapTurn(),this.sceneGame.runSwitchTurn();else{var h="It "+(this.activePlayer==i.x?"X":"O")+"'s turn, time left: ";this.sceneGame.lblTimeNoti.string=h,this.sceneGame.lblTime.string=s+"",this.lastTimeCounted!=s&&(this.lastTimeCounted=s,this.lastTimeCounted)}break;case n.VS_BOT:var o=this.getTimeoutTurn(),r=Math.floor(o-this.turnTime);if(r<=0)this.swapTurn(),this.sceneGame.runSwitchTurn();else{var c="It your turn, time left: ";if(this.getPlayerSymbol()===this.activePlayer);else for(var l=0;l<r%3;++l)c="Bot thinking, time left: ";this.sceneGame.lblTimeNoti.string=c,this.sceneGame.lblTime.string=r+"",this.lastTimeCounted!=r&&(this.lastTimeCounted=r,this.lastTimeCounted)}}},e.passTurn=function(){!this.isPlayerTurn()&&this.isVsBot()||(this.swapTurn(),this.sceneGame.runSwitchTurn())},e.swapTurn=function(){var t=this;if(this.activePlayer===i.x?this.activePlayer=i.o:this.activePlayer=i.x,console.log("SWAP TURNED: ",this.activePlayer),this.turnTime=0,this.sceneGame.onSwapTurn(),this.isVsBot()&&!this.isPlayerTurn()){this.sceneGame.btnPass.node.active=!1,console.log("Active Player: ",this.activePlayer),console.log("Grid: ",this.grid);var e=this.getBotMove(this.grid,this.activePlayer),s=e[0],h=e[1],o=e[2];console.log("Best move: ",e);var r=this.sceneGame.cubes[s][h];this.sceneGame.selectCube(r),this.idTimeOutBotMove=setTimeout((function(){t.move(r.x,r.y,o)}),1200)}else this.sceneGame.btnPass.node.active=!0},e.swapTurnOnRedo=function(){this.activePlayer===i.x?this.activePlayer=i.o:this.activePlayer=i.x,this.turnTime=0,this.sceneGame.onSwapTurn()},e.checkWinner=function(){for(var t,e,i=[],s=[],h=this.sceneGame.cubes,o=0;o<this.height;++o){var n=this.checkLine(this.grid[o]);n&&(n!=this.activePlayer&&(e=n,s=h[o]),t=n,i=h[o])}for(var a=0;a<this.width;++a){for(var c=[],l=[],u=0;u<this.height;++u)c.push(this.grid[u][a]),l.push(h[u][a]);var v=this.checkLine(c);v&&(v!=this.activePlayer&&(e=v,s=l),t=v,i=l)}for(var g=[],d=[],m=[],f=[],T=Math.min(this.width,this.height),P=0;P<T;P++)g.push(this.grid[P][P]),d.push(this.grid[P][T-1-P]),m.push(h[P][P]),f.push(h[P][T-1-P]);var y=this.checkLine(g);y&&(y!=this.activePlayer&&(e=y,s=m),t=y,i=m);var b=this.checkLine(d);return b&&(b!=this.activePlayer&&(e=b,s=f),t=b,i=f),s.length>0&&(i=s),console.log("CUBES: ",i),i.forEach((function(t){t.blinkGreen()})),console.log("WINNER: ",t,e),i.length>0&&r.inst.playOneShot("audio/game_stack_5"),e||t},e.checkLine=function(t){for(var e=1,s=1,h=-1,o=0;o<t.length-1;++o)t[o]===t[o+1]&&t[o]!==i.blank?++s>e&&(e=s,h=t[o]):s=1;return e>=this.lengthWin?h:null},e.redoMove=function(t,e,i,s){var o;console.log("redoMove : ",t,e,i,s);var r=t,n=e;switch(i){case h.TOP:o=this.grid[0][e];for(var a=0;a<r;++a)this.grid[a][e]=this.grid[a+1][e];break;case h.BOTTOM:o=this.grid[this.height-1][e];for(var c=this.height-1;c>r;--c)this.grid[c][e]=this.grid[c-1][e];break;case h.LEFT:o=this.grid[t][0];for(var l=0;l<n;++l)this.grid[t][l]=this.grid[t][l+1];break;case h.RIGHT:o=this.grid[t][this.width-1];for(var u=this.width-1;u>n;--u)this.grid[t][u]=this.grid[t][u-1]}this.grid[r][n]=s,console.log("GRID after redo move:");for(var v=0;v<this.height;++v){for(var g="",d=0;d<this.width;++d)g+=this.grid[v][d]+" ";console.log(g)}console.log("REDO MOVE: ",t,e,i,s),this.sceneGame.redoMove(t,e,i,s),o!==this.activePlayer&&this.swapTurnOnRedo(),this.isVsBot()&&!this.isPlayerTurn()&&this.redo()},e.redo=function(){if(0!==this.historyMove.length){var t=this.historyMove.pop();console.log("Redo: ",t),this.redoMove(t[0],t[1],t[2],t[3])}else console.log("Out of moves!!!")},e.redoResult=function(){if(0!==this.historyMove.length){this.setCurrentPhase(a.PLAYING);var t=this.historyMove.pop();console.log("Redo: ",t),this.redoMove(t[0],t[1],t[2],t[3])}else console.log("Out of moves!!!")},e.pause=function(){this.lastPhase=this.currentPhase,this.setCurrentPhase(a.PAUSING)},e.resume=function(){this.setCurrentPhase(this.lastPhase)},t}())._instance=void 0,e._RF.pop()}}}));
+        _proto.onTouchCancel = function onTouchCancel(event) {
+          this.path.onTouchCancel(event);
+          // console.log("Cancel pos: ", event.getUILocation());
+          // console.log("Current path: ", this.path);
+        };
 
-System.register("chunks:///_virtual/main",["./debug-view-runtime-control.ts","./CubeConst.ts","./Cube.ts","./SceneGame.ts","./SceneStart.ts","./Utilities.ts","./MiniMaxGame.ts","./MiniMaxPlayer.ts","./MiniMaxUtilities.ts","./AudioMgr.ts","./GameConst.ts","./GameMgr.ts"],(function(){return{setters:[null,null,null,null,null,null,null,null,null,null,null,null],execute:function(){}}}));
+        _proto.start = function start() {};
+        _proto.setIsParked = function setIsParked(isParked) {
+          this._isParked = isParked;
+        };
+        _proto.update = function update(deltaTime) {
+          if (!this._isStart) {
+            return;
+          }
+          if (this._isParked && !this._isGettingOut) {
+            // dang dau xe
+            return;
+          }
+          if (this._isOut) {
+            return;
+          }
+          if (this.path.getPositions().length === 0) {
+            this.moveWithCurrentAngle(deltaTime);
+            return;
+          } else {
+            this.moveWithPath(deltaTime);
+          }
+        };
+        _proto.checkTurnAround = function checkTurnAround() {
+          var currentTime = new Date().getTime();
+          if (currentTime - this._lastTimeTurnAround > 1500) {
+            this._lastTimeTurnAround = currentTime;
+            this.angle = this.angle < 180 ? this.angle + 180 : this.angle - 180;
+          }
+        };
+        _proto.moveWithCurrentAngle = function moveWithCurrentAngle(deltaTime) {
+          if (this._isReverse) {
+            this._isReverse = false;
+            this.sprCar.node.angle = 0;
+            this.angle = (this.angle + 180) % 360;
+          }
+          var s = deltaTime * this.getSpeed();
+          this.node.x = this.node.x + Math.sin(-this.angle / 180 * Math.PI) * s;
+          this.node.y = this.node.y + Math.cos(-this.angle / 180 * Math.PI) * s;
+          var deltaY = 200 / 2;
+          var deltaX = 200 / 2;
+          if (this.node.x < deltaX || this.node.x > 1280 - deltaX || this.node.y < deltaY || this.node.y > 720 - deltaY) {
+            // this.angle = this.angle < 180?this.angle + 180:this.angle -180;
+            this.checkTurnAround();
+          }
+          // this.node.angle = lerp(this.node.angle,this.angle,0.8);
+          this.rigidBody.node.angle = lerp(this.rigidBody.node.angle, this.angle, 1);
+          // this.node.angle = this.angle;
+          // console.log("Hittt: ", this.node.angle - this.angle,this.node.angle, this.angle);
+        }
 
-System.register("chunks:///_virtual/MiniMaxGame.ts",["cc","./CubeConst.ts","./MiniMaxUtilities.ts"],(function(r){var t,e,n,i,o,a;return{setters:[function(r){t=r.cclegacy},function(r){e=r.CUBE_TYPE},function(r){n=r.canSlide,i=r.deepCloneBoard,o=r.deepCloneInvestigateGame,a=r.getOpponentPlayer}],execute:function(){t._RF.push({},"54d9ePU7CxGb48P/sjQ3Qkh","MiniMaxGame",void 0);var s=r("Move",function(r){return r[r.TOP=0]="TOP",r[r.BOTTOM=1]="BOTTOM",r[r.LEFT=2]="LEFT",r[r.RIGHT=3]="RIGHT",r}({})),_=(r("Direction",function(r){return r[r.TOP=0]="TOP",r[r.BOTTOM=1]="BOTTOM",r[r.LEFT=2]="LEFT",r[r.RIGHT=3]="RIGHT",r}({})),r("Player",(function(){})),[]);[[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,4],[2,0],[2,4],[3,0],[3,4],[4,0],[4,1],[4,2],[4,3],[4,4]].forEach((function(r){[0,1,2,3].forEach((function(t){if(n(r,t)){var e=[r,t];_.push(e)}}))})),console.log("Posoa: ",JSON.stringify(_));r("InvestigateGame",function(){function r(){this._board=void 0,this.current_player_idx=void 0,this._player_to_symbol=void 0,this._board=Array.from({length:5},(function(){return Array(5).fill(e.blank)})),this.current_player_idx=1,this._player_to_symbol={0:"[ ]",1:"[x]",2:"[o]"}}var t=r.prototype;return t.setBoard=function(r){for(var t=0;t<r.length;++t)for(var e=0;e<r[t].length;++e)this._board[t][e]=r[t][e]},t.setCurrentPlayerIdx=function(r){this.current_player_idx=r},t.switchPlayer=function(){this.current_player_idx=this.getOppositePlayer()},t.getOppositePlayer=function(){return 1===this.current_player_idx?2:1},t.getBoard=function(){return i(this._board)},t.getCurrentPlayer=function(){return this.current_player_idx},t.getCurrentPlayerIndex=function(){return this.current_player_idx},t.print=function(){for(var r=0;r<this._board.length;r++){for(var t="",e=0;e<this._board[r].length;e++)t+=this._player_to_symbol[this._board[r][e]]+" ";console.log(t.trim())}},t.checkWinner=function(){for(var r=this,t=-1,n=function(n){if(r._board[n][0]!==e.blank&&r._board[n].every((function(t){return t===r._board[n][0]}))){if(r._board[n][0]===r.current_player_idx)return{v:r._board[n][0]};t=r._board[n][0]}},i=0;i<this._board.length;i++){var o=n(i);if("object"==typeof o)return o.v}for(var a=function(n){if(r._board[0][n]!==e.blank&&r._board.every((function(t){return t[n]===r._board[0][n]}))){if(r._board[0][n]===r.current_player_idx)return{v:r._board[0][n]};t=r._board[0][n]}},s=0;s<this._board[0].length;s++){var _=a(s);if("object"==typeof _)return _.v}if(this._board[0][0]!==e.blank&&this._board.every((function(t,e){return t[e]===r._board[0][0]}))){if(this._board[0][0]===this.current_player_idx)return this._board[0][0];t=this._board[0][0]}if(this._board[0][4]!==e.blank&&this._board.every((function(t,e){return t[4-e]===r._board[0][4]}))){if(this._board[0][4]===this.current_player_idx)return this._board[0][4];t=this._board[0][4]}return t},t.play=function(r,t,n){console.log("-- BEGINNING OF THE GAME --"),this.print();var i=-1,o=0,a=[null,null];this.current_player_idx=e.x;for(;i<0&&o<n;){for(var _=!1,u=void 0,h=void 0;!_;){var l=(this.current_player_idx===e.x?r:t).makeMove(this);u=l[0],h=l[1],_=this.__move(u,h,this.current_player_idx)}a[this.current_player_idx]&&a[this.current_player_idx][0]===u?(o+=.5,console.log("Inc counter: ",o)):(a[this.current_player_idx]=[u,h],o=0),console.log("Player "+this._player_to_symbol[this.current_player_idx]+" chose to move "+u+" to the "+s[h].toLowerCase()),this.print(),i=this.checkWinner(),this.switchPlayer()}return-1===i?console.log("Early Stopping: Draw!"):console.log("Winner: Player "+i),console.log("-- END OF THE GAME --"),i},t.__move=function(r,t,e){var n=i(this._board),o=this.__take(r,e);if(o&&!this.__slide(r,t))return this._board=n,console.log("Slide falseasd: ",r,t,e),!1;return o},t.__take=function(r,t){var n=r[0],i=r[1],o=!(0!==i&&4!==i&&0!==n&&4!==n||this._board[n][i]!==e.blank&&this._board[n][i]!==t);return o&&(this._board[n][i]=t),o},t.__slide=function(r,t){var e=n(r,t);if(e){var i=this._board[r[0]][r[1]];if(t===s.LEFT){for(var o=r[1];o>0;o--)this._board[r[0]][o]=this._board[r[0]][o-1];this._board[r[0]][0]=i}else if(t===s.RIGHT){for(var a=r[1];a<4;a++)this._board[r[0]][a]=this._board[r[0]][a+1];this._board[r[0]][4]=i}else if(t===s.TOP){for(var _=r[0];_>0;_--)this._board[_][r[1]]=this._board[_-1][r[1]];this._board[0][r[1]]=i}else if(t===s.BOTTOM){for(var u=r[0];u<4;u++)this._board[u][r[1]]=this._board[u+1][r[1]];this._board[4][r[1]]=i}}return e},t.getHashableState=function(r){for(var t="",e=0;e<this._board.length;e++)for(var n=0;n<this._board[e].length;n++)t+=this._board[e][n].toString();return t+this.getCurrentPlayer()+r.toString()},t.equals=function(r){return JSON.stringify(this._board)===JSON.stringify(r.getBoard())},t.generatePossibleTransitions=function(){for(var r=[],t=0,n=_;t<n.length;t++){var i=n[t],a=i[0],s=i[1],u=a[0],h=a[1];if(this._board[u][h]===e.blank||this._board[u][h]===this.current_player_idx){var l=o(this);l.__move([u,h],s,this.current_player_idx)&&(l.switchPlayer(),r.push([[u,h],s,l]))}}return r},t.evaluationFunction=function(r,t){var e=this.checkWinner();if(e>0)return e===r?1/0:-1/0;var n=0,i=0,o=r,s=a(r),_=this.getBoard();return[].concat(_,_[0].map((function(r,t){return _.map((function(r){return r[t]}))})),[_.map((function(r,t){return r[t]})),_.map((function(r,t){return r[_.length-1-t]}))]).forEach((function(r){var t=r.filter((function(r){return r===o})).length,e=r.filter((function(r){return r===s})).length;n+=2*t,i+=e})),n-i},r}());t._RF.pop()}}}));
+        // moveWithPath(deltaTime: number) {
+        //     let s = deltaTime * this.getSpeed();
+        //     let move = 0;
+        //     let moveIndex = -1;
+        //     let positions = this.path.getPositions();
+        //     while (move < s) {
+        //         if (moveIndex < positions.length - 1) {
+        //             moveIndex++;
+        //             if (moveIndex === 0) {
+        //                 move += Vec2.distance(this.node.position.toVec2(), positions[moveIndex]);
+        //             } else {
+        //                 move += Vec2.distance(positions[moveIndex], positions[moveIndex-1]);
+        //             }
+        //         }
+        //         else {
+        //             break;
+        //         }
+        //     }
+        //     console.log("Move to: ", moveIndex, positions[moveIndex], positions);
+        //     console.log("Move: ", move, "S: ", s);
+        //     let moveVector = new Vec2(positions[moveIndex].x - this.node.position.x, positions[moveIndex].y - this.node.position.y);
+        //     this.angle = Math.atan(moveVector.y/moveVector.x) * 180 / Math.PI - 90 + (moveVector.x <0?-180:0);
 
-System.register("chunks:///_virtual/MiniMaxPlayer.ts",["./rollupPluginModLoBabelHelpers.js","cc","./MiniMaxGame.ts","./MiniMaxUtilities.ts"],(function(e){var i,t,n,s,a,o;return{setters:[function(e){i=e.inheritsLoose,t=e.createForOfIteratorHelperLoose},function(e){n=e.cclegacy},function(e){s=e.Player},function(e){a=e.deepCloneInvestigateGame,o=e.randomInt}],execute:function(){n._RF.push({},"a7bc1k1NhNJ0pr7uq3Sfhp2","MiniMaxPlayer",void 0);e("MiniMaxPlayer",function(e){function n(i,t,n){var s;return void 0===i&&(i=3),void 0===t&&(t=!1),void 0===n&&(n=!0),(s=e.call(this)||this).visited=void 0,s.depth=void 0,s.symmetries=void 0,s.enhance=void 0,s.parallelizeFlag=void 0,s.concession=void 0,s.step_concession=void 0,s.deep_concession=void 0,s.visited={},s.depth=i,s.symmetries=t,s.enhance=n,s.parallelize(!0),s.concession=!1,s.step_concession=3,s.deep_concession=3,s}i(n,e);var s=n.prototype;return s.parallelize=function(e){void 0===e&&(e=!0),this.parallelizeFlag=e,e&&(this.visited={})},s.maxValue=function(e,i,n){var s=e.getHashableState(i);if(this.visited[s]&&n<=this.visited[s].depth)return this.visited[s].value;if(n<=0||-1!==e.checkWinner()){var a=e.evaluationFunction(i,this.enhance);return this.visited[s]={depth:0,value:a},a}for(var o,r=-1/0,l=e.generatePossibleTransitions(),h=t(l);!(o=h()).done;){var v=o.value,c=(v[0],v[1],v[2]);r=Math.max(r,this.minValue(c,i,n-1))}return this.visited[s]={depth:n,value:r},r},s.minValue=function(e,i,n){var s=e.getHashableState(i);if(this.visited[s]&&n<=this.visited[s].depth)return this.visited[s].value;if(n<=0||-1!==e.checkWinner()){var a=e.evaluationFunction(i,this.enhance);return this.visited[s]={depth:0,value:a},a}for(var o,r=1/0,l=e.generatePossibleTransitions(),h=t(l);!(o=h()).done;){var v=o.value,c=(v[0],v[1],v[2]);r=Math.min(r,this.maxValue(c,i,n-1))}return this.visited[s]={depth:n,value:r},r},s.makeMove=function(e){var i,n=(new Date).getTime(),s=a(e).generatePossibleTransitions();i=[];for(var r,l=t(s);!(r=l()).done;){var h=r.value,v=(h[0],h[1],h[2]),c=this.minValue(v,e.getCurrentPlayer(),this.depth-1);i.push(c)}console.log("Values: ",i);var u,d=Math.max.apply(Math,i),p=[];for(u=0;u<i.length;u++)i[u]===d&&p.push(u);var f=s[p[o(0,p.length-1)]],m=f[0],g=f[1];return console.log("Time make move: ",(new Date).getTime()-n),[m,g]},n}(s)),e("AlphaBetaMiniMaxPlayer",function(e){function n(i,t,n){var s;return void 0===i&&(i=3),void 0===t&&(t=!1),void 0===n&&(n=!0),(s=e.call(this)||this).visited=void 0,s.depth=void 0,s.symmetries=void 0,s.enhance=void 0,s.parallelizeFlag=void 0,s.concession=!1,s.stepConcession=4,s.counterStepConcession=4,s.deepConcession=4,s.counterDeepConcession=4,s.lastMaxConcession=-99,s.visited={},s.depth=i,s.symmetries=t,s.enhance=n,s.parallelize(!0),s}i(n,e);var s=n.prototype;return s.setConcessionProperties=function(e,i,t){this.concession=e,this.stepConcession=i,this.deepConcession=t},s.parallelize=function(e){void 0===e&&(e=!0),this.parallelizeFlag=e,e&&(this.visited={})},s.maxValue=function(e,i,n,s,a){var o=e.getHashableState(i);if(this.visited[o]&&n<=this.visited[o].depth)return this.visited[o].value;if(n<=0||-1!==e.checkWinner()){var r=e.evaluationFunction(i,this.enhance);return this.visited[o]={depth:0,value:r},r}for(var l,h=-1/0,v=e.generatePossibleTransitions(),c=t(v);!(l=c()).done;){var u=l.value,d=(u[0],u[1],u[2]);if(h=Math.max(h,this.minValue(d,i,n-1,s,a)),s=Math.max(s,h),h>=a)return this.visited[o]={depth:n,value:h},h}return this.visited[o]={depth:n,value:h},h},s.minValue=function(e,i,n,s,a){var o=e.getHashableState(i);if(this.visited[o]&&n<=this.visited[o].depth)return this.visited[o].value;if(n<=0||-1!==e.checkWinner()){var r=e.evaluationFunction(i,this.enhance);return this.visited[o]={depth:0,value:r},r}for(var l,h=1/0,v=e.generatePossibleTransitions(),c=t(v);!(l=c()).done;){var u=l.value,d=(u[0],u[1],u[2]);if(h=Math.min(h,this.maxValue(d,i,n-1,s,a)),a=Math.min(a,h),h<=s)return this.visited[o]={depth:n,value:h},h}return this.visited[o]={depth:n,value:h},h},s.makeMove=function(e){for(var i,n=(new Date).getTime(),s=a(e).generatePossibleTransitions(),r=[],l=t(s);!(i=l()).done;){var h=i.value,v=(h[0],h[1],h[2]),c=this.minValue(v,e.getCurrentPlayer(),this.depth-1,-1/0,1/0);r.push(c)}console.log("Values: ",r);var u=Math.max.apply(Math,r);if(this.concession)if(u===this.lastMaxConcession){if(this.counterStepConcession--,0===this.counterStepConcession){this.counterStepConcession=this.stepConcession;var d=u,p=[].concat(r).filter((function(e){return e<u}));u=Math.max.apply(Math,p),console.log("Concession: ",u,d,this.lastMaxConcession),this.lastMaxConcession=u}}else this.counterStepConcession=this.stepConcession,this.lastMaxConcession=u;var f,m=[];for(f=0;f<r.length;f++)r[f]===u&&m.push(f);var g=s[m[o(0,m.length-1)]],M=g[0],x=g[1];return console.log("Time make move: ",(new Date).getTime()-n),[M,x]},n}(s));n._RF.pop()}}}));
+        //     this.node.x = positions[moveIndex].x;
+        //     this.node.y = positions[moveIndex].y;
+        //     this.sprCar.node.angle = lerp(this.sprCar.node.angle,this.angle,0.4);
+        //     let target = new Vec2()
+        //     if (s < move) {
+        //         console.log("Move: ", move, "S: ", s, "moveIndex: ", moveIndex);
+        //         this.path.slicePositions(moveIndex+1);
+        //     } else {
 
-System.register("chunks:///_virtual/MiniMaxUtilities.ts",["cc","./CubeConst.ts","./MiniMaxGame.ts"],(function(n){var t,e,r,i;return{setters:[function(n){t=n.cclegacy},function(n){e=n.CUBE_TYPE},function(n){r=n.InvestigateGame,i=n.Move}],execute:function(){n({canSlide:function(n,t){var e,r,o,a;[[0,0],[0,4],[4,0],[4,4]].some((function(t){return t[0]===n[0]&&t[1]===n[1]}))?(e=0===n[0]&&0===n[1]&&(t===i.BOTTOM||t===i.RIGHT),o=4===n[0]&&0===n[1]&&(t===i.TOP||t===i.RIGHT),a=0===n[0]&&4===n[1]&&(t===i.BOTTOM||t===i.LEFT),r=4===n[0]&&4===n[1]&&(t===i.TOP||t===i.LEFT)):(e=0===n[0]&&(t===i.BOTTOM||t===i.LEFT||t===i.RIGHT),r=4===n[0]&&(t===i.TOP||t===i.LEFT||t===i.RIGHT),o=0===n[1]&&(t===i.BOTTOM||t===i.TOP||t===i.RIGHT),a=4===n[1]&&(t===i.BOTTOM||t===i.TOP||t===i.LEFT));return e||r||o||a},deepCloneBoard:function(n){var t=[];return n.forEach((function(n){t.push([].concat(n))})),t},deepCloneInvestigateGame:function(n){var t=new r;return t._board=n.getBoard(),t.current_player_idx=n.getCurrentPlayer(),t},getOpponentPlayer:function(n){return n===e.x?e.o:e.x},randomInt:function(n,t){return Math.floor(Math.random()*(t-n+1)+n)}}),t._RF.push({},"14f66q+/gZCyaDA2Kyx++Ki","MiniMaxUtilities",void 0),t._RF.pop()}}}));
+        //     }
+        // }
+        ;
 
-System.register("chunks:///_virtual/SceneGame.ts",["./rollupPluginModLoBabelHelpers.js","cc","./Cube.ts","./CubeConst.ts","./GameMgr.ts","./GameConst.ts","./MiniMaxGame.ts","./AudioMgr.ts"],(function(t){var e,i,s,o,n,h,a,c,r,u,d,l,g,b,p,v,m,y,f,C,M,T,x,P,w;return{setters:[function(t){e=t.applyDecoratedDescriptor,i=t.inheritsLoose,s=t.initializerDefineProperty,o=t.assertThisInitialized},function(t){n=t.cclegacy,h=t._decorator,a=t.Prefab,c=t.Label,r=t.Sprite,u=t.Button,d=t.v3,l=t.tween,g=t.instantiate,b=t.director,p=t.resources,v=t.SpriteFrame,m=t.Component},function(t){y=t.Cube},function(t){f=t.CUBE_TYPE,C=t.CUBE_SIZE},function(t){M=t.GameMgr},function(t){T=t.GameMode},function(t){x=t.Direction,P=t.Move},function(t){w=t.AudioMgr}],execute:function(){var B,S,L,_,N;n._RF.push({},"8726amg5EpKpJCXHYoMWifD","SceneGame",void 0);var R=h.ccclass,O=h.property;t("SceneGame",(B=R("SceneGame"),S=O(a),B((N=e((_=function(t){function e(){for(var e,i=arguments.length,n=new Array(i),h=0;h<i;h++)n[h]=arguments[h];return e=t.call.apply(t,[this].concat(n))||this,s(e,"prefabCube",N,o(e)),e.nodeBoard=void 0,e.lbTime=void 0,e.lbTimeX=void 0,e.lbTimeO=void 0,e.height=void 0,e.width=void 0,e.cubes=void 0,e.activePlayer=void 0,e.selectedCube=void 0,e.targetedCube=void 0,e.gameTime=void 0,e.turnTime=void 0,e.phaseTime=void 0,e.nodeResult=void 0,e.lblResult=void 0,e.gameMgr=void 0,e.nodeTime=void 0,e.lblTimeNoti=void 0,e.lblTime=void 0,e.nodeArrows=void 0,e.sprLeft=void 0,e.sprRight=void 0,e.sprTop=void 0,e.sprBot=void 0,e.btnPass=void 0,e.nodeMenu=void 0,e.btnMusic=void 0,e.btnSound=void 0,e.nodeSwitchTurn=void 0,e.idTimeOutBotMove=void 0,e.lastTimeCounted=void 0,e.nodeHelp=void 0,e}i(e,t);var n=e.prototype;return n.onLoad=function(){this.gameMgr=M.getInstance(),this.gameMgr.setSceneGame(this),this.initChild(),this.initBoard(),this.loadWithGameMode(),w.inst.checkPlayMusic()},n.onDestroy=function(){console.log("On destroye"),clearTimeout(this.idTimeOutBotMove)},n.loadWithGameMode=function(){this.gameMgr.isGameMode(T.TWO_PLAYER)},n.initChild=function(){this.nodeBoard=this.node.getChildByName("nodeBoard"),this.nodeTime=this.node.getChildByName("nodeTime"),this.lblTime=this.nodeTime.getChildByName("lblTime").getComponent(c),this.lblTimeNoti=this.nodeTime.getChildByName("lblTimeNoti").getComponent(c),this.nodeResult=this.node.getChildByName("nodeResult"),this.lblResult=this.nodeResult.getChildByName("lblResult").getComponent(c),this.nodeArrows=this.nodeBoard.getChildByName("nodeArrows"),this.sprLeft=this.nodeArrows.getChildByName("sprLeft").getComponent(r),this.sprRight=this.nodeArrows.getChildByName("sprRight").getComponent(r),this.sprTop=this.nodeArrows.getChildByName("sprTop").getComponent(r),this.sprBot=this.nodeArrows.getChildByName("sprBot").getComponent(r),this.nodeArrows.active=!1,this.nodeSwitchTurn=this.node.getChildByName("nodeSwitchTurn"),this.btnPass=this.node.getChildByName("btnPass").getComponent(u),this.initMenu(),this.initHelp()},n.initMenu=function(){this.nodeMenu=this.node.getChildByName("nodeMenu"),console.log(this.nodeMenu),this.btnMusic=this.nodeMenu.getChildByName("menuBg").getChildByName("btnMusic").getComponent(u),this.btnSound=this.nodeMenu.getChildByName("menuBg").getChildByName("btnSound").getComponent(u),this.nodeMenu.active=!1},n.initHelp=function(){this.nodeHelp=this.node.getChildByName("nodeHelp"),this.nodeHelp.active=!1},n.start=function(){this.startGame()},n.startGame=function(){this.clear(),this.activePlayer=f.x,this.gameMgr.startGame(),w.inst.playOneShot("audio/start_game")},n.clear=function(){for(var t=0;t<this.height;++t)for(var e=0;e<this.width;++e)this.cubes[t][e].clear();this.nodeResult.active=!1},n.runSwitchTurn=function(){var t=-1020,e=d(1020,0,0);this.activePlayer==f.x&&(e=d(-1020,0,0),t=1020),this.nodeSwitchTurn.position=e,l(this.nodeSwitchTurn).to(.15,{position:d(0,0,0)}).delay(.38).to(.15,{position:d(t,0,0)}).start(),w.inst.playOneShot("audio/game_switch_turn")},n.onSwapTurn=function(){this.activePlayer=this.gameMgr.getActivePlayer(),this.selectedCube&&(this.selectedCube.setSelected(!1),this.selectedCube.forceDrop(),this.clearMovableCube(this.selectedCube),this.selectedCube=null)},n.update=function(t){this.gameMgr.update(t)},n.restart=function(){this.nodeMenu.active=!1,this.startGame()},n.initBoard=function(){this.width=this.gameMgr.width,this.height=this.gameMgr.height,this.cubes=[];for(var t=0;t<this.height;++t){for(var e=[],i=0;i<this.width;++i){var s=g(this.prefabCube).getComponent(y);this.nodeBoard.addChild(s.node),s.setBoardSize(this.width,this.height),s.setLocation(t,i),s.setHandler(this),e.push(s),s.node.position=this.getPosition(t,i)}this.cubes.push(e)}this.selectedCube=this.cubes[0][0],this.selectedCube=null},n.doMove=function(t,e,i){var s,o=this.cubes[t][e],n=t,h=e;switch(this.clearMovableCube(o),console.log("Do Move: ",t,e,i),i){case x.TOP:s=this.getPosition(-1,e),n=0;for(var a=t;a>0;a--)this.cubes[a][e]=this.cubes[a-1][e],this.cubes[a][e].setLocation(a,e),this.cubes[a][e].node.position=this.getPosition(a-1,e),l(this.cubes[a][e].node).to(.3,{position:this.getPosition(a,e)}).start();break;case x.BOTTOM:s=this.getPosition(this.height,e),n=this.height-1;for(var c=t;c<this.height-1;c++)this.cubes[c][e]=this.cubes[c+1][e],this.cubes[c][e].setLocation(c,e),this.cubes[c][e].node.position=this.getPosition(c+1,e),l(this.cubes[c][e].node).to(.3,{position:this.getPosition(c,e)}).start();break;case x.LEFT:s=this.getPosition(t,-1),h=0;for(var r=e;r>0;r--)this.cubes[t][r]=this.cubes[t][r-1],this.cubes[t][r].setLocation(t,r),this.cubes[t][r].node.position=this.getPosition(t,r-1),l(this.cubes[t][r].node).to(.3,{position:this.getPosition(t,r)}).start();break;case x.RIGHT:s=this.getPosition(t,this.width),h=this.width-1;for(var u=e;u<this.width-1;u++)this.cubes[t][u]=this.cubes[t][u+1],this.cubes[t][u].setLocation(t,u),this.cubes[t][u].node.position=this.getPosition(t,u+1),l(this.cubes[t][u].node).to(.3,{position:this.getPosition(t,u)}).start()}console.log("Target: ",n,h,this.getPosition(n,h));var d=this.activePlayer;o.setLocation(n,h),o.setType(d),o.node.position=this.getPosition(n,h),o.node.position=s,l(o.node).to(.3,{position:this.getPosition(n,h)}).start(),this.cubes[n][h]=o,w.inst.playOneShot("audio/wood_hit"),w.inst.playOneShot("audio/sliding_cubes")},n.redoMove=function(t,e,i,s){var o;console.log("SceneGame::redoMove : ",t,e,i,s);var n=t,h=e;switch(i){case P.TOP:o=this.cubes[0][e];for(var a=0;a<n;++a)this.cubes[a][e]=this.cubes[a+1][e],this.cubes[a][e].setLocation(a,e),this.cubes[a][e].node.position=this.getPosition(a,e);break;case P.BOTTOM:o=this.cubes[this.height-1][e];for(var c=this.height-1;c>n;--c)this.cubes[c][e]=this.cubes[c-1][e],this.cubes[c][e].setLocation(c,e),this.cubes[c][e].node.position=this.getPosition(c,e);break;case P.LEFT:o=this.cubes[t][0];for(var r=0;r<h;++r)this.cubes[t][r]=this.cubes[t][r+1],this.cubes[t][r].setLocation(t,r),this.cubes[t][r].node.position=this.getPosition(t,r);break;case P.RIGHT:o=this.cubes[t][this.width-1];for(var u=this.width-1;u>h;--u)this.cubes[t][u]=this.cubes[t][u-1],this.cubes[t][u].setLocation(t,u),this.cubes[t][u].node.position=this.getPosition(t,u)}this.cubes[n][h]=o,this.cubes[n][h].setLocation(n,h),this.cubes[n][h].node.position=this.getPosition(n,h),s===f.blank?this.cubes[n][h].clear():this.cubes[n][h].setType(s)},n.move=function(t,e){this.selectedCube=t,this.targetedCube=e;var i=this.targetedCube.getLocation(),s=this.targetedCube.node.position,o=this.selectedCube.getLocation(),n=s;if(this.clearMovableCube(this.selectedCube),i.x==o.x)if(i.y==this.height-1){n=this.getPosition(i.x,this.height);for(var h=o.y;h<i.y;++h)this.cubes[i.x][h]=this.cubes[i.x][h+1],this.cubes[i.x][h].setLocation(i.x,h),this.cubes[i.x][h].node.position=this.getPosition(i.x,h+1),l(this.cubes[i.x][h].node).to(.3,{position:this.getPosition(i.x,h)}).start()}else{n=this.getPosition(i.x,-1);for(var a=o.y;a>i.y;--a)this.cubes[i.x][a]=this.cubes[i.x][a-1],this.cubes[i.x][a].setLocation(i.x,a),this.cubes[i.x][a].node.position=this.getPosition(i.x,a-1),l(this.cubes[i.x][a].node).to(.3,{position:this.getPosition(i.x,a)}).start()}else if(i.x==this.width-1){n=this.getPosition(this.width,i.y);for(var c=o.x;c<i.x;++c)this.cubes[c][i.y]=this.cubes[c+1][i.y],this.cubes[c][i.y].setLocation(c,i.y),this.cubes[c][i.y].node.position=this.getPosition(c+1,i.y),l(this.cubes[c][i.y].node).to(.3,{position:this.getPosition(c,i.y)}).start()}else{n=this.getPosition(-1,i.y);for(var r=o.x;r>i.x;--r)this.cubes[r][i.y]=this.cubes[r-1][i.y],this.cubes[r][i.y].setLocation(r,i.y),this.cubes[r][i.y].node.position=this.getPosition(r-1,i.y),l(this.cubes[r][i.y].node).to(.3,{position:this.getPosition(r,i.y)}).start()}var u=this.activePlayer;this.cubes[i.x][i.y]=this.selectedCube,this.selectedCube.setLocation(i.x,i.y),this.selectedCube.setType(u),this.selectedCube.node.position=n,l(this.selectedCube.node).to(.3,{position:this.getPosition(i.x,i.y)}).start(),w.inst.playOneShot("audio/wood_hit"),w.inst.playOneShot("audio/sliding_cubes")},n.getPosition=function(t,e){var i=(e+.5-this.width/2)*C.x,s=(-(t+.5)+this.height/2)*C.y;return d(i,s,0)},n.fadeInvalidCube=function(){for(var t=0;t<this.height;++t)for(var e=0;e<this.width;++e){var i=this.cubes[t][e];0==t||0==e||t==this.width-1||e==this.height-1?i.getType()!=f.blank&&i.getType()!=this.activePlayer&&i.fadeInvalid():i.fadeInvalid()}},n.selectCube=function(t){var e=t.getLocation();0==e.x||0==e.y||e.x==this.height-1||e.y==this.width-1?t.getType()!=f.blank&&t.getType()!=this.activePlayer?(console.log("Invalid cube to move"),this.fadeInvalidCube()):(console.log("Touch cube at: ("+t.x+","+t.y+")"),t.isSelected()?(t.setSelected(!1),this.clearMovableCube(t),this.selectedCube=null):(this.selectedCube&&(this.selectedCube.setSelected(!1),this.clearMovableCube(this.selectedCube)),this.selectedCube=t,t.setSelected(!0),t.setTempActive(this.activePlayer),this.showCubeDirector(t))):(console.log("Invalid cube to move"),this.fadeInvalidCube())},n.onTouchCube=function(t){this.activePlayer!==this.gameMgr.getPlayerSymbol()&&this.gameMgr.isVsBot()||this.selectCube(t)},n.showWinner=function(t){var e=(t==f.x?"X":"O")+" is the winner!!!";if(this.gameMgr.isVsBot()){var i=["Andre","Bella","Camilia","Dough"];t===f.x?(e="You have beaten "+i[this.gameMgr.botLevel],w.inst.playOneShot("audio/game_player_win")):(w.inst.playOneShot("audio/game_lol_"+this.gameMgr.botLevel),e=i[this.gameMgr.botLevel]+" is the winner!!!")}else w.inst.playOneShot("audio/game_player_win");this.lblResult.string=e,this.nodeResult.active=!0},n.getListMovalbe=function(t){var e=t.getLocation(),i=[];i.push({x:0,y:e.y},{x:this.height-1,y:e.y},{x:e.x,y:0},{x:e.x,y:this.width-1});for(var s=0;s<i.length;)i[s].x==e.x&&i[s].y==e.y?i.splice(s,1):s++;return i},n.showMovableCube=function(t){var e=this.getListMovalbe(t);console.log("Movable of cube ",t.getLocation(),"is: ",e);for(var i=0;i<e.length;++i){var s=e[i];this.cubes[s.x][s.y].setMoveable(!0)}},n.showCubeDirector=function(t){this.sprLeft.node.position=d(this.sprLeft.node.position.x,t.node.position.y,0),this.sprRight.node.position=d(this.sprRight.node.position.x,t.node.position.y,0),this.sprTop.node.position=d(t.node.position.x,this.sprTop.node.position.y,0),this.sprBot.node.position=d(t.node.position.x,this.sprBot.node.position.y,0),this.nodeArrows.active=!0,this.sprLeft.node.active=0!==t.y,this.sprRight.node.active=t.y!==this.width-1,this.sprTop.node.active=0!==t.x,this.sprBot.node.active=t.x!==this.height-1},n.clearMovableCube=function(t){for(var e=this.getListMovalbe(t),i=0;i<e.length;++i){var s=e[i];this.cubes[s.x][s.y].setMoveable(!1)}this.clearNodeDirector()},n.clearNodeDirector=function(){this.nodeArrows.active=!1},n.backToMenu=function(){b.loadScene("SceneStart",(function(){console.log("SCENE LOADED")}))},n.onTouchMenu=function(){this.showMenu()},n.onTouchDirector=function(t,e){var i=this.selectedCube.getLocation();console.log("DI: ",i,e),this.gameMgr.move(i.x,i.y,Number(e))},n.onTouchSound=function(){var t=this;w.inst.toggleSound();var e=w.inst.isEnableSound?"textures/common/img_symb_sound_on/spriteFrame":"textures/common/img_symb_sound_off/spriteFrame";p.load(e,v,(function(e,i){t.btnSound.node.getChildByName("sprSound").getComponent(r).spriteFrame=i}))},n.onTouchMusic=function(){var t=this;w.inst.toggleMusic();var e=w.inst.isEnableMusic?"textures/common/img_symb_music_on/spriteFrame":"textures/common/img_symb_music_off/spriteFrame";p.load(e,v,(function(e,i){t.btnMusic.node.getChildByName("sprMusic").getComponent(r).spriteFrame=i}))},n.onTouchRedo=function(){this.gameMgr.redo()},n.onTouchRedoResult=function(){this.nodeResult.active=!1,this.gameMgr.redoResult()},n.showMenu=function(){this.nodeMenu.active=!0,this.gameMgr.pause()},n.hideMenu=function(){this.nodeMenu.active=!1,this.gameMgr.resume()},n.onTouchPassTurn=function(){this.passTurn()},n.passTurn=function(){this.gameMgr.passTurn()},n.onTouchHelp=function(){this.showHelp()},n.showHelp=function(){this.nodeHelp.active=!0},n.hideHelp=function(){this.nodeHelp.active=!1},n.saveCode=function(){},e}(m)).prototype,"prefabCube",[S],{configurable:!0,enumerable:!0,writable:!0,initializer:null}),L=_))||L));n._RF.pop()}}}));
+        _proto.getSpeed = function getSpeed() {
+          if (this._isReverse) {
+            return this.speed / 2;
+          }
+          return this.speed;
+        };
+        _proto.moveWithPath = function moveWithPath(deltaTime) {
+          var s = deltaTime * this.getSpeed();
+          var move = 0;
+          var moveIndex = -1;
+          var positions = this.path.getPositions();
+          while (move < s) {
+            if (moveIndex < positions.length - 1) {
+              moveIndex++;
+              if (moveIndex === 0) {
+                move += Vec2.distance(this.node.position.toVec2(), positions[moveIndex]);
+              } else {
+                move += Vec2.distance(positions[moveIndex], positions[moveIndex - 1]);
+              }
+            } else {
+              break;
+            }
+          }
+          var targetPos = new Vec2(positions[moveIndex].x, positions[moveIndex].y);
+          var moveVector = new Vec2(positions[moveIndex].x - this.node.position.x, positions[moveIndex].y - this.node.position.y);
+          var targetAngle = Math.atan(moveVector.y / moveVector.x) * 180 / Math.PI - 90 + (moveVector.x < 0 ? -180 : 0);
+          if (s < move) {
+            // di chuyen 1 phan tren path di toi moveIndex
+            var retainPath = move - s;
+            var lastPathLength = 0;
+            var lastPos = this.node.position.toVec2();
+            if (moveIndex === 0) {
+              lastPathLength = Vec2.distance(positions[moveIndex], lastPos);
+            } else {
+              lastPos = positions[moveIndex - 1];
+              lastPathLength = Vec2.distance(positions[moveIndex], lastPos);
+            }
+            if (lastPathLength === 0) {
+              // targetPos = lastPos; // todo check
+              targetPos = positions[moveIndex];
+            } else {
+              var rate = (lastPathLength - retainPath) / lastPathLength;
+              targetPos.x = lastPos.x + (positions[moveIndex].x - lastPos.x) * rate;
+              targetPos.y = lastPos.y + (positions[moveIndex].y - lastPos.y) * rate;
+            }
+            moveVector = new Vec2(positions[moveIndex].x - lastPos.x, positions[moveIndex].y - lastPos.y);
+            targetAngle = (Math.atan(moveVector.y / moveVector.x) * 180 / Math.PI - 90 + (moveVector.x < 0 ? -180 : 0)) % 360;
+            // targetAngle = Math.atan(moveVector.y/moveVector.x) * 180 / Math.PI - 90; 
+            if (Math.abs(targetAngle - this.angle) > 150 && Math.abs(targetAngle - this.angle) < 300) {
+              console.log("EEEEEE", Math.abs(targetAngle - this.angle) % 360);
+              this._isReverse = !this._isReverse;
+              this.sprCar.node.angle = this._isReverse ? 180 : 0;
+            }
+            this.path.slicePositions(moveIndex);
+          } else {
+            // di chuyen het path
+            moveVector = new Vec2(positions[moveIndex].x - this.node.position.x, positions[moveIndex].y - this.node.position.y);
+            this.path.slicePositions(positions.length);
+            this.onFinishPath();
+          }
 
-System.register("chunks:///_virtual/SceneStart.ts",["./rollupPluginModLoBabelHelpers.js","cc","./GameMgr.ts","./GameConst.ts","./AudioMgr.ts"],(function(e){var t,n,i,o,s,d,c,l,u,a,r,g,h,m;return{setters:[function(e){t=e.inheritsLoose},function(e){n=e.cclegacy,i=e._decorator,o=e.Label,s=e.Button,d=e.Slider,c=e.director,l=e.resources,u=e.SpriteFrame,a=e.Sprite,r=e.Component},function(e){g=e.GameMgr},function(e){h=e.GameMode},function(e){m=e.AudioMgr}],execute:function(){var S;n._RF.push({},"5c72d8zXmNLfrZbEe8FAYVv","SceneStart",void 0);var p=i.ccclass;i.property,e("SceneStart",p("SceneStart")(S=function(e){function n(){for(var t,n=arguments.length,i=new Array(n),o=0;o<n;o++)i[o]=arguments[o];return(t=e.call.apply(e,[this].concat(i))||this).nodeSelectBotLevel=void 0,t.nodeSwitchTurn=void 0,t.nodeSetting=void 0,t.nodeSprSettingBg=void 0,t.lblSound=void 0,t.lblMusic=void 0,t.lblTimeout=void 0,t.btnSound=void 0,t.btnMusic=void 0,t.sldTimeout=void 0,t.lastIndexTimeout=void 0,t.nodeHelp=void 0,t}t(n,e);var i=n.prototype;return i.onLoad=function(){this.initChild()},i.initChild=function(){this.nodeSelectBotLevel=this.node.getChildByName("nodeSelectBotLevel"),this.initSetting(),this.initHelp()},i.initSetting=function(){this.nodeSetting=this.node.getChildByName("nodeSetting"),this.nodeSprSettingBg=this.nodeSetting.getChildByName("sprSettingBg"),this.lblMusic=this.nodeSprSettingBg.getChildByName("nodeMusic").getChildByName("lblMusic").getComponent(o),this.btnMusic=this.nodeSprSettingBg.getChildByName("nodeMusic").getChildByName("btnMusic").getComponent(s),this.lblSound=this.nodeSprSettingBg.getChildByName("nodeSound").getChildByName("lblSound").getComponent(o),this.btnSound=this.nodeSprSettingBg.getChildByName("nodeSound").getChildByName("btnSound").getComponent(s),this.lblTimeout=this.nodeSprSettingBg.getChildByName("nodeTimeout").getChildByName("lblTimeout").getComponent(o),this.sldTimeout=this.nodeSprSettingBg.getChildByName("nodeTimeout").getChildByName("sldTimeout").getComponent(d),this.nodeSetting.active=!1},i.initHelp=function(){this.nodeHelp=this.node.getChildByName("nodeHelp"),this.nodeHelp.active=!1},i.start=function(){c.preloadScene("SceneGame",(function(){console.log("SceneGame scene preloaded")})),this.nodeSelectBotLevel.active=!1},i.update=function(e){},i.onTouch2Players=function(){g.getInstance().setGameMode(h.TWO_PLAYER),c.loadScene("SceneGame",(function(){console.log("SCENE LOADED")}))},i.onTouchVsBot=function(){this.nodeSelectBotLevel.active=!0},i.hideSelectBot=function(){this.nodeSelectBotLevel.active=!1},i.onSelectBotLevel=function(e,t){console.log("Bot level: ",t),g.getInstance().setGameMode(h.VS_BOT),g.getInstance().setBotLevel(Number(t)),c.loadScene("SceneGame",(function(){console.log("SCENE LOADED VS BOT")}))},i.showSetting=function(){this.nodeSetting.active=!0},i.hideSetting=function(){this.nodeSetting.active=!1},i.onTouchSound=function(){var e=this;m.inst.toggleSound(),m.inst.playOneShot("audio/impact"),this.lblSound.string="Sound: "+(m.inst.isEnableSound?"On":"Off");var t=m.inst.isEnableSound?"textures/common/img_symb_sound_on/spriteFrame":"textures/common/img_symb_sound_off/spriteFrame";l.load(t,u,(function(t,n){e.btnSound.node.getChildByName("sprSound").getComponent(a).spriteFrame=n}))},i.onTouchMusic=function(){var e=this;m.inst.playOneShot("audio/impact"),m.inst.toggleMusic(),this.lblMusic.string="Music: "+(m.inst.isEnableMusic?"On":"Off");var t=m.inst.isEnableMusic?"textures/common/img_symb_music_on/spriteFrame":"textures/common/img_symb_music_off/spriteFrame";l.load(t,u,(function(t,n){e.btnMusic.node.getChildByName("sprMusic").getComponent(a).spriteFrame=n}))},i.onTouchHTP=function(){this.showHelp()},i.showHelp=function(){this.nodeHelp.active=!0},i.hideHelp=function(){this.nodeHelp.active=!1},i.onTouchInfo=function(){},i.onSlideTimeout=function(e,t){var n=100*e.progress,i=[5,35,65,95],o=i.reduce((function(e,t){return Math.abs(t-n)<Math.abs(e-n)?t:e})),s=i.indexOf(o),d=[15,30,45,60];this.lastIndexTimeout!=s&&(m.inst.playOneShot("audio/impact"),g.getInstance().setTimeoutTurn(d[s]),this.lblTimeout.string="Timeout: "+d[s]+"s"),this.lastIndexTimeout=s,e.progress=o/100},n}(r))||S);n._RF.pop()}}}));
+          // final move
+          this.angle = targetAngle;
+          this.node.x = targetPos.x;
+          this.node.y = targetPos.y;
+          this.rigidBody.angularVelocity = 0;
+          this.rigidBody.angularDamping = 0;
+          this.node.angle = lerp(this.node.angle, this.angle, 1);
+          // this.node.angle = this.angle;
+          // console.log("Hi: ", this.node.angle - this.angle,this.node.angle, this.angle);
+        };
 
-System.register("chunks:///_virtual/Utilities.ts",["cc"],(function(t){var e;return{setters:[function(t){e=t.cclegacy}],execute:function(){t("randomInt",(function(t,e){return Math.floor(Math.random()*(e-t+1)+t)})),e._RF.push({},"71e4fV79kBB/5LACx2WA/Ro","Utilities",void 0),e._RF.pop()}}}));
+        _proto.doParking = function doParking() {
+          var _this2 = this;
+          this._state = CarState.PARKING;
+          this._isParked = true;
+          this.pbTimer.node.active = true;
+          console.log("Do parking: ", this._timeParking);
+          tween(this.pbTimer).to(this._timeParking / 1000, {
+            progress: 1
+          }).call(function () {
+            _this2.onFinishParking();
+          }).start();
+        };
+        _proto.onFinishParking = function onFinishParking() {
+          console.log("onFinishParking");
+          this._state = CarState.PARKED;
+          this._isParked = true;
+          this.sprCheck.node.active = true;
+          this.pbTimer.node.active = false;
+        };
+        _proto.onFinishPath = function onFinishPath() {
+          if (this.path.isMatchPark()) {
+            this.doParking();
+          }
+          if (this.path.isMatchOut()) {
+            this.moveOut();
+          }
+          this.path.reset();
+        };
+        _proto.moveOut = function moveOut() {
+          var _this3 = this;
+          this._isOut = true;
+          GameManager.getInstance().incScore();
+          tween(this.node.getComponent(UIOpacity)).to(0.3, {
+            opacity: 0
+          }).call(function () {
+            _this3.onFinishMoveOut();
+          }).start();
+        };
+        _proto.onFinishMoveOut = function onFinishMoveOut() {
+          this.node.active = false;
+          this.node.removeFromParent();
+          GameManager.getInstance().getCarManager().pushToPool(this);
+        };
+        _proto.reset = function reset() {
+          this.node.active = true;
+          this.node.getComponent(UIOpacity).opacity = 255;
+          this._isOut = false;
+          this._isParked = false;
+          this._isDriverInside = true;
+          this._isGettingOut = false;
+        };
+        _proto.readyToStart = function readyToStart() {
+          var _this4 = this;
+          this._isStart = false;
+          // this.rigidBody.enabledContactListener = false;
+          this.rigidBody.enabled = false;
+          this.node.getComponent(UIOpacity).opacity = 200;
+          tween(this.node.getComponent(UIOpacity)).to(0.4, {
+            opacity: 100
+          }).to(0.4, {
+            opacity: 200
+          }).to(0.4, {
+            opacity: 100
+          }).to(0.4, {
+            opacity: 200
+          }).to(0.4, {
+            opacity: 100
+          }).call(function () {
+            _this4._isStart = true;
+            _this4.rigidBody.enabled = true;
+            _this4.ignoreCollider(2);
+          })
+          // .to(0.5, {opacity: 200})
+          // .to(0.5, {opacity: 100})
+          // .to(0.5, {opacity: 200})
+          // .to(0.5, {opacity: 255})
+          // .call(() => {
+          //     // this.rigidBody.enabledContactListener = true;
+          // })
+          .start();
+        };
+        _proto.ignoreCollider = function ignoreCollider(timeOut) {
+          var _this5 = this;
+          if (timeOut === void 0) {
+            timeOut = 3;
+          }
+          this.rigidBody.enabledContactListener = false;
+          tween(this.node.getComponent(UIOpacity)).to(timeOut / 4, {
+            opacity: 100
+          }).to(timeOut / 4, {
+            opacity: 200
+          }).to(timeOut / 8, {
+            opacity: 100
+          }).to(timeOut / 8, {
+            opacity: 200
+          }).to(timeOut / 8, {
+            opacity: 100
+          }).to(timeOut / 8, {
+            opacity: 255
+          }).call(function () {
+            _this5.rigidBody.enabledContactListener = true;
+          }).start();
+        };
+        return Car;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts', './Car.ts'], function (exports) {
+  var _inheritsLoose, cclegacy, _decorator, resources, instantiate, Vec3, randomRangeInt, Component, GameManager, Car;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      resources = module.resources;
+      instantiate = module.instantiate;
+      Vec3 = module.Vec3;
+      randomRangeInt = module.randomRangeInt;
+      Component = module.Component;
+    }, function (module) {
+      GameManager = module.GameManager;
+    }, function (module) {
+      Car = module.Car;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "bdc76E2bGNGC7IZS8WqIwWN", "CarManager", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var CarManager = exports('CarManager', (_dec = ccclass('CarManager'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(CarManager, _Component);
+        function CarManager() {
+          var _this;
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+          _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+          _this.prefabCar = null;
+          _this.cars = [];
+          _this.pool = [];
+          _this.numCarsGen = 3;
+          _this.timeGen = 0;
+          return _this;
+        }
+        var _proto = CarManager.prototype;
+        _proto.onLoad = function onLoad() {
+          GameManager.getInstance().setCarManager(this);
+          this.loadResources();
+        };
+        _proto.loadResources = function loadResources() {
+          var _this2 = this;
+          resources.load("prefabs/PrefabCar", function (err, data) {
+            _this2.prefabCar = data;
+            _this2.onFinishLoadResources();
+          });
+        };
+        _proto.getCars = function getCars() {
+          return this.cars;
+        };
+        _proto.initSomeCar = function initSomeCar() {
+          // for (let i = 0; i < 4; ++i) {
+          //     let carComp = this.getNewCar();
+          //     carComp.reset();
+          //     let nodeCar = carComp.node;
+          //     this.node.addChild(nodeCar);
+          //     nodeCar.position = new Vec3(randomRangeInt(50,1000), randomRangeInt(50, 600), 0);
+          //     this.cars.push(nodeCar.getComponent(Car));
+          // }
+          this.genNewWave();
+        };
+        _proto.onFinishLoadResources = function onFinishLoadResources() {
+          this.initSomeCar();
+        };
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        _proto.pushToPool = function pushToPool(car) {
+          this.cars = this.cars.filter(function (car) {
+            return car.getCarId() === car.getCarId();
+          });
+          this.pool.push(car);
+        };
+        _proto.getNewCar = function getNewCar() {
+          // if (this.pool.length > 0) {
+          //     return this.pool.pop();
+          // }
+          return instantiate(this.prefabCar).getComponent(Car);
+        };
+        _proto.genNewWave = function genNewWave() {
+          var _this3 = this;
+          console.log("Gen new wave");
+          var summonPos = [new Vec3(1130, 320, 0), new Vec3(1130, 480, 0), new Vec3(1130, 480, 0)];
+          var _loop = function _loop() {
+            var car = _this3.getNewCar();
+            car.reset();
+            car.node.position = summonPos[randomRangeInt(0, 3)];
+            car.node.angle = 90;
+            setTimeout(function () {
+              _this3.node.addChild(car.node);
+              car.readyToStart();
+              _this3.cars.push(car);
+            }, randomRangeInt(1000, 12000));
+          };
+          for (var i = 0; i < this.numCarsGen; ++i) {
+            _loop();
+          }
+          this.timeGen++;
+          if (this.timeGen % 4 == 0) {
+            this.numCarsGen++;
+          }
+          this.timeOutGenNewWave();
+        };
+        _proto.timeOutGenNewWave = function timeOutGenNewWave() {
+          var _this4 = this;
+          setTimeout(function () {
+            _this4.genNewWave();
+          }, randomRangeInt(24000, 35000));
+        };
+        return CarManager;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/GameManager.ts", ['cc', './Car.ts'], function (exports) {
+  var cclegacy, _decorator, director, Vec2, PhysicsSystem2D, Contact2DType, Car;
+  return {
+    setters: [function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      director = module.director;
+      Vec2 = module.Vec2;
+      PhysicsSystem2D = module.PhysicsSystem2D;
+      Contact2DType = module.Contact2DType;
+    }, function (module) {
+      Car = module.Car;
+    }],
+    execute: function () {
+      cclegacy._RF.push({}, "98a61/kBkhIx6OCjAMltUol", "GameManager", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var GameManager = exports('GameManager', /*#__PURE__*/function () {
+        GameManager.getInstance = function getInstance() {
+          if (!this._instance) {
+            this._instance = new GameManager();
+          }
+          return this._instance;
+        }
+
+        /**
+         *
+         */;
+        function GameManager() {
+          this.parkingLotManager = void 0;
+          this.pathManager = void 0;
+          this.carManager = void 0;
+          this.gameTime = 0;
+          this.gameTick = 0;
+          this.score = 0;
+          this.life = 3;
+          this.sceneGame = void 0;
+          var physic_manager = PhysicsSystem2D.instance;
+          physic_manager.enable = true;
+          physic_manager.fixedTimeStep = 1 / 60;
+          physic_manager.on(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
+          physic_manager.on(Contact2DType.END_CONTACT, this.onEndContact, this);
+        }
+        var _proto = GameManager.prototype;
+        _proto.subLife = function subLife() {
+          console.log("subLife");
+          this.life--;
+          this.sceneGame.setLife(this.life);
+          if (this.life == 0) {
+            console.log("End game");
+            this.endGame();
+          }
+        };
+        _proto.endGame = function endGame() {
+          director.pause();
+          this.sceneGame.showGameOver(this.score);
+        };
+        _proto.onBeginContact = function onBeginContact(selfCollider, otherCollider, contact) {
+          // if (!otherCollider.node.getComponent(RigidBody2D).enabledContactListener) {
+          //     alert("Touchaz");
+          //     return;
+          // }
+          var x,
+            y = 0;
+          var nodeCar = selfCollider.node.getComponent(Car);
+          var nodeOtherCar = otherCollider.node.getComponent(Car);
+          nodeCar && nodeCar.ignoreCollider(3);
+          nodeOtherCar && nodeOtherCar.ignoreCollider(3);
+          var points = contact.getWorldManifold().points;
+          console.log("Points: ", points, contact.getWorldManifold().normal, contact.getWorldManifold().separations);
+          console.log("pos: ", selfCollider.node.position, otherCollider.node.position);
+          points.forEach(function (point) {
+            x += point.x;
+            y += point.y;
+          });
+          x /= points.length;
+          y /= points.length;
+          x = selfCollider.node.position.x;
+          console.log("VSC: ", x, y);
+          this.sceneGame.showBoom(new Vec2(x, y));
+          this.subLife();
+        };
+        _proto.onEndContact = function onEndContact(selfCollider, otherCollider, contact) {};
+        _proto.setParkingLotManager = function setParkingLotManager(parkLotManager) {
+          this.parkingLotManager = parkLotManager;
+        };
+        _proto.getParkingLotManager = function getParkingLotManager() {
+          return this.parkingLotManager;
+        };
+        _proto.setPathManager = function setPathManager(pathManager) {
+          this.pathManager = pathManager;
+        };
+        _proto.getPathManager = function getPathManager() {
+          return this.pathManager;
+        };
+        _proto.setCarManager = function setCarManager(carManager) {
+          this.carManager = carManager;
+        };
+        _proto.getCarManager = function getCarManager() {
+          return this.carManager;
+        };
+        _proto.update = function update(deltaTime) {
+          this.gameTime += deltaTime;
+          this.gameTick++;
+          // if (this.gameTick % 1800 === 0) {
+          //     // 30s
+          //     this.carManager.genNewWave();
+          // }
+        };
+
+        _proto.setSceneGame = function setSceneGame(sceneGame) {
+          this.sceneGame = sceneGame;
+        };
+        _proto.incScore = function incScore() {
+          this.score++;
+          this.sceneGame.setScore(this.score);
+        };
+        _proto.reset = function reset() {
+          this.life = 3;
+          this.score = 0;
+        };
+        return GameManager;
+      }());
+      GameManager._instance = void 0;
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/GateOut.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc'], function (exports) {
+  var _inheritsLoose, cclegacy, _decorator, Component;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      Component = module.Component;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "9e6cbddZN1NdpDWIm1Cd0EX", "GateOut", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var GateOut = exports('GateOut', (_dec = ccclass('GateOut'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(GateOut, _Component);
+        function GateOut() {
+          return _Component.apply(this, arguments) || this;
+        }
+        var _proto = GateOut.prototype;
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        return GateOut;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/main", ['./Car.ts', './CarManager.ts', './GameManager.ts', './GateOut.ts', './ParkingLot.ts', './ParkingLotManager.ts', './Path.ts', './PathManager.ts', './SceneGame.ts'], function () {
+  return {
+    setters: [null, null, null, null, null, null, null, null, null],
+    execute: function () {}
+  };
+});
+
+System.register("chunks:///_virtual/ParkingLot.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc'], function (exports) {
+  var _inheritsLoose, cclegacy, _decorator, Component;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      Component = module.Component;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "8958c3HUftCVbNXmCsYDd6q", "ParkingLot", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var ParkingLot = exports('ParkingLot', (_dec = ccclass('ParkingLot'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(ParkingLot, _Component);
+        function ParkingLot() {
+          return _Component.apply(this, arguments) || this;
+        }
+        var _proto = ParkingLot.prototype;
+        _proto.onLoad = function onLoad() {};
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        return ParkingLot;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/ParkingLotManager.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './ParkingLot.ts', './GameManager.ts', './GateOut.ts'], function (exports) {
+  var _inheritsLoose, cclegacy, _decorator, resources, instantiate, Vec3, Component, ParkingLot, GameManager, GateOut;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      resources = module.resources;
+      instantiate = module.instantiate;
+      Vec3 = module.Vec3;
+      Component = module.Component;
+    }, function (module) {
+      ParkingLot = module.ParkingLot;
+    }, function (module) {
+      GameManager = module.GameManager;
+    }, function (module) {
+      GateOut = module.GateOut;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "c2f90ToSQdMwbNO1HNmeyTD", "ParkingLotManager", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var ParkingLotManager = exports('ParkingLotManager', (_dec = ccclass('ParkingLotManager'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(ParkingLotManager, _Component);
+        function ParkingLotManager() {
+          var _this;
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+          _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+          _this.prefabParkingLot = null;
+          _this.parkingLots = [];
+          _this.gateOuts = [];
+          return _this;
+        }
+        var _proto = ParkingLotManager.prototype;
+        _proto.onLoad = function onLoad() {
+          GameManager.getInstance().setParkingLotManager(this);
+          this.loadResources();
+          this.gateOuts.push(this.node.getChildByName("NodeGateOut").getComponent(GateOut));
+        };
+        _proto.loadResources = function loadResources() {
+          var _this2 = this;
+          resources.load("prefabs/PrefabParkingLot", function (err, data) {
+            _this2.prefabParkingLot = data;
+            _this2.onFinishLoadResources();
+          });
+        };
+        _proto.getParkingLots = function getParkingLots() {
+          return this.parkingLots;
+        };
+        _proto.getGateOuts = function getGateOuts() {
+          return this.gateOuts;
+        };
+        _proto.initParkingLot = function initParkingLot() {
+          for (var i = 0; i < 5; ++i) {
+            var nodeParkingLot = instantiate(this.prefabParkingLot);
+            this.node.addChild(nodeParkingLot);
+            nodeParkingLot.position = new Vec3(200 + i * 120, 220, i);
+            this.parkingLots.push(nodeParkingLot.getComponent(ParkingLot));
+          }
+        };
+        _proto.onFinishLoadResources = function onFinishLoadResources() {
+          this.initParkingLot();
+        };
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        return ParkingLotManager;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
+  var _applyDecoratedDescriptor, _inheritsLoose, _initializerDefineProperty, _assertThisInitialized, cclegacy, _decorator, Graphics, Sprite, Input, Vec3, Color, UITransform, Component, GameManager;
+  return {
+    setters: [function (module) {
+      _applyDecoratedDescriptor = module.applyDecoratedDescriptor;
+      _inheritsLoose = module.inheritsLoose;
+      _initializerDefineProperty = module.initializerDefineProperty;
+      _assertThisInitialized = module.assertThisInitialized;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      Graphics = module.Graphics;
+      Sprite = module.Sprite;
+      Input = module.Input;
+      Vec3 = module.Vec3;
+      Color = module.Color;
+      UITransform = module.UITransform;
+      Component = module.Component;
+    }, function (module) {
+      GameManager = module.GameManager;
+    }],
+    execute: function () {
+      var _dec, _dec2, _class, _class2, _descriptor;
+      cclegacy._RF.push({}, "a615d2MLztBULrqEMVRTglw", "Path", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var Path = exports('Path', (_dec = ccclass('Path'), _dec2 = property(Graphics), _dec(_class = (_class2 = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(Path, _Component);
+        function Path() {
+          var _this;
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+          _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+          _this.positions = [];
+          _this.sprHead = void 0;
+          _initializerDefineProperty(_this, "graphics", _descriptor, _assertThisInitialized(_this));
+          _this.parkingLotManager = null;
+          _this._isMatchPark = void 0;
+          _this._isGettingOut = false;
+          _this._isMatchOut = false;
+          _this._isDrawing = false;
+          return _this;
+        }
+        var _proto = Path.prototype;
+        _proto.onLoad = function onLoad() {
+          this.sprHead = this.node.getChildByName("sprHead").getComponent(Sprite);
+          this.sprHead.node.on(Input.EventType.TOUCH_START, this.onTouchHeadStart, this);
+          this.sprHead.node.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
+          this.sprHead.node.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
+          this.sprHead.node.on(Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
+          this.graphics = this.node.getChildByName("nodeGraphics").getComponent(Graphics);
+          this.reset();
+        };
+        _proto.reset = function reset() {
+          this.graphics.clear();
+          this.sprHead.node.position = new Vec3(0, 0, 0);
+          this.sprHead.node.active = false;
+          this._isMatchPark = false;
+        };
+        _proto.getPositions = function getPositions() {
+          return this.positions;
+        };
+        _proto.slicePositions = function slicePositions(moveIndex) {
+          this.positions = this.positions.slice(moveIndex);
+          this.reDrawPath();
+        };
+        _proto.reDrawPath = function reDrawPath() {
+          if (this.positions.length === 0) {
+            return;
+          }
+          this.graphics.clear();
+          this.graphics.moveTo(this.positions[0].x, this.positions[0].y);
+          for (var i = 1; i < this.positions.length; ++i) {
+            this.graphics.lineTo(this.positions[i].x, this.positions[i].y);
+          }
+          this.graphics.stroke();
+        };
+        _proto.onTouchHeadStart = function onTouchHeadStart(event) {
+          this._isMatchPark = false;
+          this._isMatchOut = false;
+          this._isDrawing = true;
+        };
+        _proto.onTouchStart = function onTouchStart(event) {
+          this._isDrawing = true;
+          this._isMatchPark = false;
+          this._isMatchOut = false;
+          this.sprHead.node.active = true;
+          var startPos = event.getUILocation();
+          this.positions.length = 0;
+          this.positions.push(startPos);
+          this.graphics.clear();
+          this.graphics.strokeColor = Color.WHITE;
+          this.graphics.lineWidth = 5;
+          this.graphics.moveTo(startPos.x, startPos.y);
+        };
+        _proto.onTouchMove = function onTouchMove(event) {
+          var _this2 = this;
+          if (!this._isDrawing) {
+            return;
+          }
+          var minDelta = 5;
+          var currentPos = event.getUILocation();
+          if (this.positions.length === 0) {
+            this.positions.push(currentPos);
+            this.sprHead.node.position = currentPos.toVec3();
+            this.graphics.moveTo(currentPos.x, currentPos.y); // todo check move or line
+          } else {
+            var lastPath = this.positions[this.positions.length - 1];
+            if (Math.abs(currentPos.x - lastPath.x) > minDelta || Math.abs(currentPos.y - lastPath.y) > minDelta) {
+              this.positions.push(currentPos);
+              this.sprHead.node.position = currentPos.toVec3();
+              this.sprHead.node.active = true;
+              this.graphics.lineTo(currentPos.x, currentPos.y);
+            }
+          }
+          var parkingLots = GameManager.getInstance().getParkingLotManager().getParkingLots();
+          if (!this._isGettingOut) {
+            parkingLots.forEach(function (parkingLot) {
+              var rectEntry = parkingLot.node.getChildByName("sprEntry").getComponent(UITransform).getBoundingBoxToWorld();
+              if (rectEntry.contains(currentPos)) {
+                var centerParkingLot = parkingLot.node.getComponent(UITransform).getBoundingBox().center;
+                console.log("Hey hey", centerParkingLot);
+                _this2._isMatchPark = true;
+                _this2._isDrawing = false;
+                _this2.positions.push(centerParkingLot);
+                _this2.graphics.lineTo(centerParkingLot.x, centerParkingLot.y);
+                _this2.sprHead.node.position = centerParkingLot.toVec3();
+              }
+            });
+          }
+          if (this._isGettingOut) {
+            var gateOuts = GameManager.getInstance().getParkingLotManager().getGateOuts();
+            gateOuts.forEach(function (gate) {
+              var rectGate = gate.node.getComponent(UITransform).getBoundingBoxToWorld();
+              if (rectGate.contains(currentPos)) {
+                _this2._isDrawing = false;
+                _this2._isMatchOut = true;
+                _this2.positions.push(rectGate.center);
+                _this2.graphics.lineTo(rectGate.center.x, rectGate.center.y);
+                _this2.sprHead.node.position = rectGate.center.toVec3();
+              }
+            });
+          }
+          this.graphics.stroke();
+        };
+        _proto.onTouchEnd = function onTouchEnd(event) {
+          if (!this._isDrawing) return;
+          console.log("End pos: ", event.getUILocation());
+          this.positions.push(event.getUILocation());
+          console.log("Current positions: ", this.positions);
+        };
+        _proto.onTouchCancel = function onTouchCancel(event) {
+          if (!this._isDrawing) return;
+          console.log("Cancel pos: ", event.getUILocation());
+          console.log("Current positions: ", this.positions);
+        };
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        _proto.isMatchPark = function isMatchPark() {
+          return this._isMatchPark;
+        };
+        _proto.isMatchOut = function isMatchOut() {
+          return this._isMatchOut;
+        };
+        _proto.isGettingOut = function isGettingOut() {
+          return this._isGettingOut;
+        };
+        _proto.setIsGettingOut = function setIsGettingOut(b) {
+          this._isGettingOut = b;
+          if (this._isGettingOut) {
+            this._isMatchPark = false;
+          }
+        };
+        return Path;
+      }(Component), _descriptor = _applyDecoratedDescriptor(_class2.prototype, "graphics", [_dec2], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function initializer() {
+          return null;
+        }
+      }), _class2)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/PathManager.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './Path.ts', './GameManager.ts'], function (exports) {
+  var _applyDecoratedDescriptor, _inheritsLoose, _initializerDefineProperty, _assertThisInitialized, cclegacy, _decorator, Prefab, instantiate, Component, Path, GameManager;
+  return {
+    setters: [function (module) {
+      _applyDecoratedDescriptor = module.applyDecoratedDescriptor;
+      _inheritsLoose = module.inheritsLoose;
+      _initializerDefineProperty = module.initializerDefineProperty;
+      _assertThisInitialized = module.assertThisInitialized;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      Prefab = module.Prefab;
+      instantiate = module.instantiate;
+      Component = module.Component;
+    }, function (module) {
+      Path = module.Path;
+    }, function (module) {
+      GameManager = module.GameManager;
+    }],
+    execute: function () {
+      var _dec, _dec2, _class, _class2, _descriptor;
+      cclegacy._RF.push({}, "2d504Mw5IRANIdGfwqFTIJr", "PathManager", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var PathManager = exports('PathManager', (_dec = ccclass('PathManager'), _dec2 = property(Prefab), _dec(_class = (_class2 = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(PathManager, _Component);
+        function PathManager() {
+          var _this;
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+          _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+          _initializerDefineProperty(_this, "prefabPath", _descriptor, _assertThisInitialized(_this));
+          _this.pool = [];
+          return _this;
+        }
+        var _proto = PathManager.prototype;
+        _proto.onLoad = function onLoad() {
+          GameManager.getInstance().setPathManager(this);
+          this.pool = [];
+        };
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        _proto.getPath = function getPath() {
+          var nodePath = instantiate(this.prefabPath);
+          this.node.addChild(nodePath);
+          return nodePath.getComponent(Path);
+        };
+        return PathManager;
+      }(Component), _descriptor = _applyDecoratedDescriptor(_class2.prototype, "prefabPath", [_dec2], {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        initializer: function initializer() {
+          return null;
+        }
+      }), _class2)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
+  var _inheritsLoose, cclegacy, _decorator, Label, Node, ParticleSystem2D, resources, ParticleAsset, Component, GameManager;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      Label = module.Label;
+      Node = module.Node;
+      ParticleSystem2D = module.ParticleSystem2D;
+      resources = module.resources;
+      ParticleAsset = module.ParticleAsset;
+      Component = module.Component;
+    }, function (module) {
+      GameManager = module.GameManager;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "fdb0bkEw0BK8qj+5gEg0V0r", "SceneGame", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var SceneGame = exports('SceneGame', (_dec = ccclass('SceneGame'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(SceneGame, _Component);
+        function SceneGame() {
+          var _this;
+          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+          _this = _Component.call.apply(_Component, [this].concat(args)) || this;
+          _this.gameManager = void 0;
+          _this.lbScoreValue = void 0;
+          return _this;
+        }
+        var _proto = SceneGame.prototype;
+        _proto.onLoad = function onLoad() {
+          this.gameManager = GameManager.getInstance();
+          this.gameManager.setSceneGame(this);
+          this.lbScoreValue = this.node.getChildByName("NodeUI").getChildByName("NodeTopLeft").getChildByName("lbScoreValue").getComponent(Label);
+        };
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {
+          this.gameManager.update(deltaTime);
+        };
+        _proto.setScore = function setScore(score) {
+          this.lbScoreValue.string = score + "";
+        };
+        _proto.setLife = function setLife(life) {
+          var nodeLive = this.node.getChildByName("NodeUI").getChildByName("NodeTopLeft").getChildByName("nodeLive");
+          var child = nodeLive.children.forEach(function (node, index) {
+            if (index < life) {
+              node.active = true;
+            } else {
+              node.active = false;
+            }
+          });
+        };
+        _proto.showBoom = function showBoom(pos) {
+          console.log("BOOM: ", pos);
+          var node = new Node("effect");
+          var particleSystem = node.addComponent(ParticleSystem2D);
+          resources.load("particles/boom", ParticleAsset, function (err, particleAsset) {
+            if (err) {
+              console.error("Failed to load particle asset:", err);
+              return;
+            }
+            particleSystem.file = particleAsset;
+            particleSystem.playOnLoad = true; // Optionally, start playing immediately
+          });
+
+          particleSystem.autoRemoveOnFinish = true;
+          particleSystem.duration = 1;
+          var nodeEffect = this.node.getChildByName("NodeEffect");
+          nodeEffect.addChild(node);
+          node.setPosition(pos.toVec3());
+          setTimeout(function () {
+            node.removeFromParent();
+          }, 1000);
+
+          // const nodeBoom = this.node.getChildByName("NodeEffect").getChildByName("NodeBoom");
+          // nodeBoom.setPosition(pos.toVec3());
+          // nodeBoom.active = true;
+          // setTimeout(() => {
+          //     nodeBoom.active = false;
+          // },500);
+        };
+
+        _proto.showGameOver = function showGameOver(score) {
+          var nodeGameOver = this.node.getChildByName("NodeUI").getChildByName("NodeGameOver");
+          nodeGameOver.active = true;
+          nodeGameOver.getChildByName("lbScore").getComponent(Label).string = score + "";
+        };
+        return SceneGame;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
 
 (function(r) {
   r('virtual:///prerequisite-imports/main', 'chunks:///_virtual/main'); 
