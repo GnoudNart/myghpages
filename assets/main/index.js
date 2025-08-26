@@ -1052,7 +1052,7 @@ System.register("chunks:///_virtual/PathManager.ts", ['./rollupPluginModLoBabelH
 });
 
 System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
-  var _inheritsLoose, cclegacy, _decorator, Label, Node, ParticleSystem2D, resources, ParticleAsset, Component, GameManager;
+  var _inheritsLoose, cclegacy, _decorator, Label, screen, Node, ParticleSystem2D, resources, ParticleAsset, Component, GameManager;
   return {
     setters: [function (module) {
       _inheritsLoose = module.inheritsLoose;
@@ -1060,6 +1060,7 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
       cclegacy = module.cclegacy;
       _decorator = module._decorator;
       Label = module.Label;
+      screen = module.screen;
       Node = module.Node;
       ParticleSystem2D = module.ParticleSystem2D;
       resources = module.resources;
@@ -1090,6 +1091,7 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
           this.gameManager = GameManager.getInstance();
           this.gameManager.setSceneGame(this);
           this.lbScoreValue = this.node.getChildByName("NodeUI").getChildByName("NodeTopLeft").getChildByName("lbScoreValue").getComponent(Label);
+          screen.requestFullScreen();
         };
         _proto.start = function start() {};
         _proto.update = function update(deltaTime) {
