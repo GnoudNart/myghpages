@@ -416,6 +416,21 @@
             "cc.SpriteFrame",
             1
         ],
+        "73b4dd60-501c-471e-8f34-f7ae25d2c53d": [
+            "textures/road/222",
+            "cc.ImageAsset",
+            1
+        ],
+        "73b4dd60-501c-471e-8f34-f7ae25d2c53d@6c48a": [
+            "textures/road/222/texture",
+            "cc.Texture2D",
+            1
+        ],
+        "73b4dd60-501c-471e-8f34-f7ae25d2c53d@f9941": [
+            "textures/road/222/spriteFrame",
+            "cc.SpriteFrame",
+            1
+        ],
         "f60ae59e-d455-423c-9099-11aeaee10056": [
             "textures/road/28",
             "cc.ImageAsset",
@@ -686,6 +701,21 @@
             "cc.SpriteFrame",
             1
         ],
+        "55f4c2b3-42c9-4249-b425-f32fdc0c5707": [
+            "textures/road/55",
+            "cc.ImageAsset",
+            1
+        ],
+        "55f4c2b3-42c9-4249-b425-f32fdc0c5707@6c48a": [
+            "textures/road/55/texture",
+            "cc.Texture2D",
+            1
+        ],
+        "55f4c2b3-42c9-4249-b425-f32fdc0c5707@f9941": [
+            "textures/road/55/spriteFrame",
+            "cc.SpriteFrame",
+            1
+        ],
         "499a9810-3ba5-4ad2-be71-59b8a0b462a5": [
             "textures/road/pattern_ground",
             "cc.ImageAsset",
@@ -818,36 +848,6 @@
         ],
         "b14a093f-5fe9-4b84-a810-0d9cb0efead9@f9941": [
             "textures/road/Untitled-27/spriteFrame",
-            "cc.SpriteFrame",
-            1
-        ],
-        "73b4dd60-501c-471e-8f34-f7ae25d2c53d": [
-            "textures/road/222",
-            "cc.ImageAsset",
-            1
-        ],
-        "73b4dd60-501c-471e-8f34-f7ae25d2c53d@6c48a": [
-            "textures/road/222/texture",
-            "cc.Texture2D",
-            1
-        ],
-        "73b4dd60-501c-471e-8f34-f7ae25d2c53d@f9941": [
-            "textures/road/222/spriteFrame",
-            "cc.SpriteFrame",
-            1
-        ],
-        "55f4c2b3-42c9-4249-b425-f32fdc0c5707": [
-            "textures/road/55",
-            "cc.ImageAsset",
-            1
-        ],
-        "55f4c2b3-42c9-4249-b425-f32fdc0c5707@6c48a": [
-            "textures/road/55/texture",
-            "cc.Texture2D",
-            1
-        ],
-        "55f4c2b3-42c9-4249-b425-f32fdc0c5707@f9941": [
-            "textures/road/55/spriteFrame",
             "cc.SpriteFrame",
             1
         ]

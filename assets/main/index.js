@@ -385,7 +385,9 @@ System.register("chunks:///_virtual/Car.ts", ['./rollupPluginModLoBabelHelpers.j
           if (timeOut === void 0) {
             timeOut = 3;
           }
-          this.rigidBody.enabledContactListener = false;
+          if (this.rigidBody) {
+            this.rigidBody.enabledContactListener = false;
+          }
           tween(this.node.getComponent(UIOpacity)).to(timeOut / 4, {
             opacity: 100
           }).to(timeOut / 4, {
@@ -399,7 +401,7 @@ System.register("chunks:///_virtual/Car.ts", ['./rollupPluginModLoBabelHelpers.j
           }).to(timeOut / 8, {
             opacity: 255
           }).call(function () {
-            _this5.rigidBody.enabledContactListener = true;
+            if (_this5.rigidBody) _this5.rigidBody.enabledContactListener = true;
           }).start();
         };
         return Car;
@@ -443,7 +445,7 @@ System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHe
           _this.prefabCar = null;
           _this.cars = [];
           _this.pool = [];
-          _this.numCarsGen = 2;
+          _this.numCarsGen = 3;
           _this.timeGen = 0;
           return _this;
         }
@@ -510,7 +512,7 @@ System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHe
             _loop();
           }
           this.timeGen++;
-          if (this.timeGen % 5 == 0) {
+          if (this.timeGen % 4 == 0) {
             this.numCarsGen++;
           }
           this.timeOutGenNewWave();
@@ -519,7 +521,13 @@ System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHe
           var _this4 = this;
           setTimeout(function () {
             _this4.genNewWave();
-          }, randomRangeInt(24000, 35000));
+          }, randomRangeInt(22000, 30000));
+        };
+        _proto.clearCars = function clearCars() {
+          this.cars.forEach(function (car) {
+            car.node.removeFromParent();
+          });
+          this.cars = [];
         };
         return CarManager;
       }(Component)) || _class));
@@ -570,7 +578,10 @@ System.register("chunks:///_virtual/GameManager.ts", ['cc', './Car.ts'], functio
           physic_manager.fixedTimeStep = 1 / 60;
           physic_manager.on(Contact2DType.BEGIN_CONTACT, this.onBeginContact, this);
           physic_manager.on(Contact2DType.END_CONTACT, this.onEndContact, this);
+
+          // physic_manager.debugDrawFlags = EPhysics2DDrawFlags.All;
         }
+
         var _proto = GameManager.prototype;
         _proto.subLife = function subLife() {
           console.log("subLife");
@@ -580,6 +591,16 @@ System.register("chunks:///_virtual/GameManager.ts", ['cc', './Car.ts'], functio
             console.log("End game");
             this.endGame();
           }
+        };
+        _proto.startGame = function startGame() {
+          director.resume();
+          this.carManager.clearCars();
+          this.pathManager.clearPaths();
+          this.gameTime = 0;
+          this.life = 3;
+          this.score = 0;
+          this.sceneGame.setLife(this.life);
+          this.sceneGame.setScore(this.score);
         };
         _proto.endGame = function endGame() {
           director.pause();
@@ -596,16 +617,21 @@ System.register("chunks:///_virtual/GameManager.ts", ['cc', './Car.ts'], functio
           var nodeOtherCar = otherCollider.node.getComponent(Car);
           nodeCar && nodeCar.ignoreCollider(3);
           nodeOtherCar && nodeOtherCar.ignoreCollider(3);
-          var points = contact.getWorldManifold().points;
-          console.log("Points: ", points, contact.getWorldManifold().normal, contact.getWorldManifold().separations);
+          // const points = contact.getWorldManifold().points
+          // console.log("Points: ",points, contact.getWorldManifold().normal, contact.getWorldManifold().separations);
+          var point = selfCollider.worldAABB.center;
           console.log("pos: ", selfCollider.node.position, otherCollider.node.position);
-          points.forEach(function (point) {
-            x += point.x;
-            y += point.y;
-          });
-          x /= points.length;
-          y /= points.length;
+
+          // points.forEach(point => {
+          //     x+= point.x;
+          //     y+= point.y;
+          // })
+          // x /= points.length;
+          // y /= points.length;
+
           x = selfCollider.node.position.x;
+          x = point.x;
+          y = point.y;
           console.log("VSC: ", x, y);
 
           // otherCollider.node.scale = new Vec3(2,2,2);
@@ -1077,6 +1103,9 @@ System.register("chunks:///_virtual/PathManager.ts", ['./rollupPluginModLoBabelH
           this.node.addChild(nodePath);
           return nodePath.getComponent(Path);
         };
+        _proto.clearPaths = function clearPaths() {
+          this.node.removeAllChildren();
+        };
         return PathManager;
       }(Component), _descriptor = _applyDecoratedDescriptor(_class2.prototype, "prefabPath", [_dec2], {
         configurable: true,
@@ -1092,7 +1121,7 @@ System.register("chunks:///_virtual/PathManager.ts", ['./rollupPluginModLoBabelH
 });
 
 System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
-  var _inheritsLoose, _asyncToGenerator, _regeneratorRuntime, cclegacy, _decorator, Label, screen, Node, ParticleSystem2D, resources, ParticleAsset, director, Component, Mask, MaskType, Sprite, UITransform, SpriteFrame, GameManager;
+  var _inheritsLoose, _asyncToGenerator, _regeneratorRuntime, cclegacy, _decorator, Label, Node, ParticleSystem2D, resources, ParticleAsset, PhysicsSystem2D, EPhysics2DDrawFlags, Component, Mask, MaskType, Sprite, UITransform, SpriteFrame, GameManager;
   return {
     setters: [function (module) {
       _inheritsLoose = module.inheritsLoose;
@@ -1102,12 +1131,12 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
       cclegacy = module.cclegacy;
       _decorator = module._decorator;
       Label = module.Label;
-      screen = module.screen;
       Node = module.Node;
       ParticleSystem2D = module.ParticleSystem2D;
       resources = module.resources;
       ParticleAsset = module.ParticleAsset;
-      director = module.director;
+      PhysicsSystem2D = module.PhysicsSystem2D;
+      EPhysics2DDrawFlags = module.EPhysics2DDrawFlags;
       Component = module.Component;
       Mask = module.Mask;
       MaskType = module.MaskType;
@@ -1140,8 +1169,9 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
           this.gameManager.setSceneGame(this);
           this.lbScoreValue = this.node.getChildByName("NodeUI").getChildByName("NodeTopLeft").getChildByName("lbScoreValue").getComponent(Label);
           this.maskGround();
-          screen.requestFullScreen();
+          // screen.requestFullScreen();
         };
+
         _proto.maskGround = /*#__PURE__*/function () {
           var _maskGround = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
             var nodeMap, _loop, i;
@@ -1284,7 +1314,11 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
           console.log("Play Again");
           var nodeGameOver = this.node.getChildByName("NodeUI").getChildByName("NodeGameOver");
           nodeGameOver.active = false;
-          director.loadScene("SceneLobby");
+          // director.loadScene("SceneLobby");
+          this.gameManager.startGame();
+        };
+        _proto.cheat = function cheat() {
+          PhysicsSystem2D.instance.debugDrawFlags = PhysicsSystem2D.instance.debugDrawFlags == EPhysics2DDrawFlags.All ? EPhysics2DDrawFlags.None : EPhysics2DDrawFlags.All;
         };
         return SceneGame;
       }(Component)) || _class));
@@ -1294,13 +1328,14 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
 });
 
 System.register("chunks:///_virtual/SceneLobby.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc'], function (exports) {
-  var _inheritsLoose, cclegacy, _decorator, director, Component;
+  var _inheritsLoose, cclegacy, _decorator, screen, director, Component;
   return {
     setters: [function (module) {
       _inheritsLoose = module.inheritsLoose;
     }, function (module) {
       cclegacy = module.cclegacy;
       _decorator = module._decorator;
+      screen = module.screen;
       director = module.director;
       Component = module.Component;
     }],
@@ -1315,7 +1350,9 @@ System.register("chunks:///_virtual/SceneLobby.ts", ['./rollupPluginModLoBabelHe
           return _Component.apply(this, arguments) || this;
         }
         var _proto = SceneLobby.prototype;
-        _proto.start = function start() {};
+        _proto.start = function start() {
+          screen.requestFullScreen();
+        };
         _proto.update = function update(deltaTime) {};
         _proto.startGane = function startGane() {
           director.loadScene("SceneGame");
