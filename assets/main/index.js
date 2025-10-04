@@ -66,7 +66,7 @@ System.register("chunks:///_virtual/Car.ts", ['./rollupPluginModLoBabelHelpers.j
         var _proto = Car.prototype;
         _proto.onLoad = function onLoad() {
           this.angle = randomRangeInt(0, 359);
-          this.speed = randomRangeInt(50, 300);
+          this.speed = randomRangeInt(50, 150);
           console.log("Car::onLoad", this.angle);
           this.node.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
           this.node.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
@@ -77,7 +77,7 @@ System.register("chunks:///_virtual/Car.ts", ['./rollupPluginModLoBabelHelpers.j
           this._carId = IDGenerator.global.getNewId();
           this.boxCollider = this.node.getComponent(BoxCollider2D);
           this.rigidBody = this.node.getComponent(RigidBody2D);
-          this._timeParking = randomRangeInt(5000, 10000);
+          this._timeParking = randomRangeInt(10000, 25000);
           this.pbTimer = this.node.getChildByName("pbTimer").getComponent(ProgressBar);
           this.sprCheck = this.node.getChildByName("sprCheck").getComponent(Sprite);
           this.sprCheck.node.active = false;
@@ -107,7 +107,6 @@ System.register("chunks:///_virtual/Car.ts", ['./rollupPluginModLoBabelHelpers.j
           var startPos = event.getUILocation();
           this.path.onTouchStart(event);
           // this.path.length = 0;
-          // console.log("Start pos: ", startPos);
           // this.path.push(startPos);
           // this.graphics.clear();
           // this.graphics.strokeColor = Color.WHITE;
@@ -444,7 +443,7 @@ System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHe
           _this.prefabCar = null;
           _this.cars = [];
           _this.pool = [];
-          _this.numCarsGen = 3;
+          _this.numCarsGen = 2;
           _this.timeGen = 0;
           return _this;
         }
@@ -494,11 +493,12 @@ System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHe
         _proto.genNewWave = function genNewWave() {
           var _this3 = this;
           console.log("Gen new wave");
-          var summonPos = [new Vec3(1130, 320, 0), new Vec3(1130, 480, 0), new Vec3(1130, 480, 0)];
+          // return;
+          var summonPos = [new Vec3(915, 25, 0), new Vec3(1255, 50, 0)];
           var _loop = function _loop() {
             var car = _this3.getNewCar();
             car.reset();
-            car.node.position = summonPos[randomRangeInt(0, 3)];
+            car.node.position = summonPos[randomRangeInt(0, summonPos.length)];
             car.node.angle = 90;
             setTimeout(function () {
               _this3.node.addChild(car.node);
@@ -510,7 +510,7 @@ System.register("chunks:///_virtual/CarManager.ts", ['./rollupPluginModLoBabelHe
             _loop();
           }
           this.timeGen++;
-          if (this.timeGen % 4 == 0) {
+          if (this.timeGen % 5 == 0) {
             this.numCarsGen++;
           }
           this.timeOutGenNewWave();
@@ -607,6 +607,10 @@ System.register("chunks:///_virtual/GameManager.ts", ['cc', './Car.ts'], functio
           y /= points.length;
           x = selfCollider.node.position.x;
           console.log("VSC: ", x, y);
+
+          // otherCollider.node.scale = new Vec3(2,2,2);
+          // selfCollider.node.scale = new Vec3(3,3,3);
+
           this.sceneGame.showBoom(new Vec2(x, y));
           this.subLife();
         };
@@ -687,9 +691,9 @@ System.register("chunks:///_virtual/GateOut.ts", ['./rollupPluginModLoBabelHelpe
   };
 });
 
-System.register("chunks:///_virtual/main", ['./Car.ts', './CarManager.ts', './GameManager.ts', './GateOut.ts', './ParkingLot.ts', './ParkingLotManager.ts', './Path.ts', './PathManager.ts', './SceneGame.ts'], function () {
+System.register("chunks:///_virtual/main", ['./Car.ts', './CarManager.ts', './GameManager.ts', './GateOut.ts', './ParkingLot.ts', './ParkingLotManager.ts', './Path.ts', './PathManager.ts', './SceneGame.ts', './SceneLobby.ts'], function () {
   return {
-    setters: [null, null, null, null, null, null, null, null, null],
+    setters: [null, null, null, null, null, null, null, null, null, null],
     execute: function () {}
   };
 });
@@ -726,16 +730,15 @@ System.register("chunks:///_virtual/ParkingLot.ts", ['./rollupPluginModLoBabelHe
 });
 
 System.register("chunks:///_virtual/ParkingLotManager.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './ParkingLot.ts', './GameManager.ts', './GateOut.ts'], function (exports) {
-  var _inheritsLoose, cclegacy, _decorator, resources, instantiate, Vec3, Component, ParkingLot, GameManager, GateOut;
+  var _inheritsLoose, _createForOfIteratorHelperLoose, cclegacy, _decorator, resources, Component, ParkingLot, GameManager, GateOut;
   return {
     setters: [function (module) {
       _inheritsLoose = module.inheritsLoose;
+      _createForOfIteratorHelperLoose = module.createForOfIteratorHelperLoose;
     }, function (module) {
       cclegacy = module.cclegacy;
       _decorator = module._decorator;
       resources = module.resources;
-      instantiate = module.instantiate;
-      Vec3 = module.Vec3;
       Component = module.Component;
     }, function (module) {
       ParkingLot = module.ParkingLot;
@@ -782,11 +785,23 @@ System.register("chunks:///_virtual/ParkingLotManager.ts", ['./rollupPluginModLo
           return this.gateOuts;
         };
         _proto.initParkingLot = function initParkingLot() {
-          for (var i = 0; i < 5; ++i) {
-            var nodeParkingLot = instantiate(this.prefabParkingLot);
-            this.node.addChild(nodeParkingLot);
-            nodeParkingLot.position = new Vec3(200 + i * 120, 220, i);
-            this.parkingLots.push(nodeParkingLot.getComponent(ParkingLot));
+          // for (let i = 0; i < 5; ++i) {
+          //     let nodeParkingLot = instantiate(this.prefabParkingLot);
+          //     this.node.addChild(nodeParkingLot);
+          //     nodeParkingLot.position = new Vec3(200 + i * 120, 220, i);
+          //     this.parkingLots.push(nodeParkingLot.getComponent(ParkingLot));
+          // }
+          this.addParkingLotInNode(this.node);
+        };
+        _proto.addParkingLotInNode = function addParkingLotInNode(node) {
+          if (node.getComponent(ParkingLot)) {
+            this.parkingLots.push(node.getComponent(ParkingLot));
+            console.log("add Parking Slot: ", this.parkingLots.length);
+            return;
+          }
+          for (var _iterator = _createForOfIteratorHelperLoose(node.children), _step; !(_step = _iterator()).done;) {
+            var child = _step.value;
+            this.addParkingLotInNode(child);
           }
         };
         _proto.onFinishLoadResources = function onFinishLoadResources() {
@@ -802,7 +817,7 @@ System.register("chunks:///_virtual/ParkingLotManager.ts", ['./rollupPluginModLo
 });
 
 System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
-  var _applyDecoratedDescriptor, _inheritsLoose, _initializerDefineProperty, _assertThisInitialized, cclegacy, _decorator, Graphics, Sprite, Input, Vec3, Color, UITransform, Component, GameManager;
+  var _applyDecoratedDescriptor, _inheritsLoose, _initializerDefineProperty, _assertThisInitialized, cclegacy, _decorator, Graphics, Sprite, Input, view, Vec3, Color, UITransform, Mat4, Component, GameManager;
   return {
     setters: [function (module) {
       _applyDecoratedDescriptor = module.applyDecoratedDescriptor;
@@ -815,9 +830,11 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
       Graphics = module.Graphics;
       Sprite = module.Sprite;
       Input = module.Input;
+      view = module.view;
       Vec3 = module.Vec3;
       Color = module.Color;
       UITransform = module.UITransform;
+      Mat4 = module.Mat4;
       Component = module.Component;
     }, function (module) {
       GameManager = module.GameManager;
@@ -843,6 +860,7 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
           _this._isGettingOut = false;
           _this._isMatchOut = false;
           _this._isDrawing = false;
+          _this._deltaX = 0;
           return _this;
         }
         var _proto = Path.prototype;
@@ -854,7 +872,9 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
           this.sprHead.node.on(Input.EventType.TOUCH_CANCEL, this.onTouchCancel, this);
           this.graphics = this.node.getChildByName("nodeGraphics").getComponent(Graphics);
           this.reset();
+          this._deltaX = -view.getVisibleSize().width / 2 + view.getDesignResolutionSize().width / 2; // chech lech X giua world position va design position khi choi tren screen != design size tai diem (0,0) cua root scene va (0,0) cua windows screen
         };
+
         _proto.reset = function reset() {
           this.graphics.clear();
           this.sprHead.node.position = new Vec3(0, 0, 0);
@@ -890,6 +910,7 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
           this._isMatchOut = false;
           this.sprHead.node.active = true;
           var startPos = event.getUILocation();
+          startPos.x += this._deltaX;
           this.positions.length = 0;
           this.positions.push(startPos);
           this.graphics.clear();
@@ -904,6 +925,7 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
           }
           var minDelta = 5;
           var currentPos = event.getUILocation();
+          currentPos.x += this._deltaX;
           if (this.positions.length === 0) {
             this.positions.push(currentPos);
             this.sprHead.node.position = currentPos.toVec3();
@@ -921,9 +943,24 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
           if (!this._isGettingOut) {
             parkingLots.forEach(function (parkingLot) {
               var rectEntry = parkingLot.node.getChildByName("sprEntry").getComponent(UITransform).getBoundingBoxToWorld();
+              rectEntry.x += _this2._deltaX;
+              // let drawRect = parkingLot.node.getChildByName("sprEntry").getComponent(UITransform).getBoundingBox();
+              // let nodeGraphics = parkingLot.node.getChildByName("nodeGraphics");
+              // if (!nodeGraphics) {
+              //     nodeGraphics = new Node();
+              //     nodeGraphics.name = "nodeGraphics";
+              //     parkingLot.node.addChild(nodeGraphics);
+              // }
+              // let graphics = nodeGraphics.getComponent(Graphics);
+              // if (!graphics) {
+              //     graphics = nodeGraphics.addComponent(Graphics);
+              // }
+              // graphics.rect(rectEntry.x,rectEntry.y,rectEntry.width,rectEntry.height);
+              // graphics.fill();
               if (rectEntry.contains(currentPos)) {
-                var centerParkingLot = parkingLot.node.getComponent(UITransform).getBoundingBox().center;
-                console.log("Hey hey", centerParkingLot);
+                var centerParkingLot = parkingLot.node.getComponent(UITransform).getBoundingBoxToWorld().center;
+                centerParkingLot.x += _this2._deltaX;
+                console.log("Hey hey", centerParkingLot, rectEntry.center, parkingLot.node.getChildByName("sprEntry").getComponent(UITransform).getBoundingBoxTo(new Mat4()).center);
                 _this2._isMatchPark = true;
                 _this2._isDrawing = false;
                 _this2.positions.push(centerParkingLot);
@@ -936,6 +973,7 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
             var gateOuts = GameManager.getInstance().getParkingLotManager().getGateOuts();
             gateOuts.forEach(function (gate) {
               var rectGate = gate.node.getComponent(UITransform).getBoundingBoxToWorld();
+              rectGate.x += _this2._deltaX;
               if (rectGate.contains(currentPos)) {
                 _this2._isDrawing = false;
                 _this2._isMatchOut = true;
@@ -949,8 +987,10 @@ System.register("chunks:///_virtual/Path.ts", ['./rollupPluginModLoBabelHelpers.
         };
         _proto.onTouchEnd = function onTouchEnd(event) {
           if (!this._isDrawing) return;
-          console.log("End pos: ", event.getUILocation());
-          this.positions.push(event.getUILocation());
+          var endPos = event.getUILocation();
+          endPos.x += this._deltaX;
+          console.log("End pos: ", endPos);
+          this.positions.push(endPos);
           console.log("Current positions: ", this.positions);
         };
         _proto.onTouchCancel = function onTouchCancel(event) {
@@ -1052,10 +1092,12 @@ System.register("chunks:///_virtual/PathManager.ts", ['./rollupPluginModLoBabelH
 });
 
 System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc', './GameManager.ts'], function (exports) {
-  var _inheritsLoose, cclegacy, _decorator, Label, screen, Node, ParticleSystem2D, resources, ParticleAsset, Component, GameManager;
+  var _inheritsLoose, _asyncToGenerator, _regeneratorRuntime, cclegacy, _decorator, Label, screen, Node, ParticleSystem2D, resources, ParticleAsset, director, Component, Mask, MaskType, Sprite, UITransform, SpriteFrame, GameManager;
   return {
     setters: [function (module) {
       _inheritsLoose = module.inheritsLoose;
+      _asyncToGenerator = module.asyncToGenerator;
+      _regeneratorRuntime = module.regeneratorRuntime;
     }, function (module) {
       cclegacy = module.cclegacy;
       _decorator = module._decorator;
@@ -1065,7 +1107,13 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
       ParticleSystem2D = module.ParticleSystem2D;
       resources = module.resources;
       ParticleAsset = module.ParticleAsset;
+      director = module.director;
       Component = module.Component;
+      Mask = module.Mask;
+      MaskType = module.MaskType;
+      Sprite = module.Sprite;
+      UITransform = module.UITransform;
+      SpriteFrame = module.SpriteFrame;
     }, function (module) {
       GameManager = module.GameManager;
     }],
@@ -1091,8 +1139,92 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
           this.gameManager = GameManager.getInstance();
           this.gameManager.setSceneGame(this);
           this.lbScoreValue = this.node.getChildByName("NodeUI").getChildByName("NodeTopLeft").getChildByName("lbScoreValue").getComponent(Label);
+          this.maskGround();
           screen.requestFullScreen();
         };
+        _proto.maskGround = /*#__PURE__*/function () {
+          var _maskGround = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+            var nodeMap, _loop, i;
+            return _regeneratorRuntime().wrap(function _callee$(_context2) {
+              while (1) switch (_context2.prev = _context2.next) {
+                case 0:
+                  nodeMap = this.node.getChildByName("NodeGame").getChildByName("NodeMap");
+                  _loop = /*#__PURE__*/_regeneratorRuntime().mark(function _loop() {
+                    var child, nodeMask, mask, maskSprite, maskUITransform, nodeColor, colorUITransform, colorSprite;
+                    return _regeneratorRuntime().wrap(function _loop$(_context) {
+                      while (1) switch (_context.prev = _context.next) {
+                        case 0:
+                          child = nodeMap.children[i];
+                          if (!(child.name != "Ground")) {
+                            _context.next = 3;
+                            break;
+                          }
+                          return _context.abrupt("return", 1);
+                        case 3:
+                          nodeMask = new Node();
+                          mask = nodeMask.addComponent(Mask);
+                          mask.type = MaskType.SPRITE_STENCIL;
+                          maskSprite = nodeMask.getComponent(Sprite);
+                          maskSprite.spriteFrame = child.getComponent(Sprite).spriteFrame;
+                          maskUITransform = nodeMask.addComponent(UITransform);
+                          maskUITransform.width = child.getComponent(UITransform).width;
+                          maskUITransform.height = child.getComponent(UITransform).height;
+                          mask.inverted = false;
+                          nodeColor = new Node();
+                          colorUITransform = nodeColor.addComponent(UITransform);
+                          colorSprite = nodeColor.addComponent(Sprite);
+                          resources.load("textures/road/pattern_ground/spriteFrame", SpriteFrame, function (err, spriteFrame) {
+                            if (err) {
+                              console.error("Failed to load particle asset:", err);
+                              return;
+                            }
+                            colorSprite.spriteFrame = spriteFrame;
+                            colorUITransform.width = 2000;
+                            colorUITransform.height = 2000;
+                          });
+                          nodeMask.addChild(nodeColor);
+                          child.addChild(nodeMask);
+
+                        // const nodeGraphic = new Node();
+                        // child.addChild(nodeGraphic);
+                        // const graphics = nodeGraphic.addComponent(Graphics);
+                        // const box = child.getComponent(UITransform).getBoundingBox();
+                        // graphics.rect(box.x, box.y, box.width, box.height);
+                        // graphics.fill();
+                        case 18:
+                        case "end":
+                          return _context.stop();
+                      }
+                    }, _loop);
+                  });
+                  i = 0;
+                case 3:
+                  if (!(i < nodeMap.children.length)) {
+                    _context2.next = 10;
+                    break;
+                  }
+                  return _context2.delegateYield(_loop(), "t0", 5);
+                case 5:
+                  if (!_context2.t0) {
+                    _context2.next = 7;
+                    break;
+                  }
+                  return _context2.abrupt("continue", 7);
+                case 7:
+                  ++i;
+                  _context2.next = 3;
+                  break;
+                case 10:
+                case "end":
+                  return _context2.stop();
+              }
+            }, _callee, this);
+          }));
+          function maskGround() {
+            return _maskGround.apply(this, arguments);
+          }
+          return maskGround;
+        }();
         _proto.start = function start() {};
         _proto.update = function update(deltaTime) {
           this.gameManager.update(deltaTime);
@@ -1145,7 +1277,50 @@ System.register("chunks:///_virtual/SceneGame.ts", ['./rollupPluginModLoBabelHel
           nodeGameOver.active = true;
           nodeGameOver.getChildByName("lbScore").getComponent(Label).string = score + "";
         };
+        _proto.pauseGame = function pauseGame() {
+          console.log("Pause game");
+        };
+        _proto.playAgain = function playAgain() {
+          console.log("Play Again");
+          var nodeGameOver = this.node.getChildByName("NodeUI").getChildByName("NodeGameOver");
+          nodeGameOver.active = false;
+          director.loadScene("SceneLobby");
+        };
         return SceneGame;
+      }(Component)) || _class));
+      cclegacy._RF.pop();
+    }
+  };
+});
+
+System.register("chunks:///_virtual/SceneLobby.ts", ['./rollupPluginModLoBabelHelpers.js', 'cc'], function (exports) {
+  var _inheritsLoose, cclegacy, _decorator, director, Component;
+  return {
+    setters: [function (module) {
+      _inheritsLoose = module.inheritsLoose;
+    }, function (module) {
+      cclegacy = module.cclegacy;
+      _decorator = module._decorator;
+      director = module.director;
+      Component = module.Component;
+    }],
+    execute: function () {
+      var _dec, _class;
+      cclegacy._RF.push({}, "2777dr29ydOlId2TL8ieOfN", "SceneLobby", undefined);
+      var ccclass = _decorator.ccclass,
+        property = _decorator.property;
+      var SceneLobby = exports('SceneLobby', (_dec = ccclass('SceneLobby'), _dec(_class = /*#__PURE__*/function (_Component) {
+        _inheritsLoose(SceneLobby, _Component);
+        function SceneLobby() {
+          return _Component.apply(this, arguments) || this;
+        }
+        var _proto = SceneLobby.prototype;
+        _proto.start = function start() {};
+        _proto.update = function update(deltaTime) {};
+        _proto.startGane = function startGane() {
+          director.loadScene("SceneGame");
+        };
+        return SceneLobby;
       }(Component)) || _class));
       cclegacy._RF.pop();
     }

@@ -61,7 +61,7 @@
         ]
     },
     "launch": {
-        "launchScene": "db://assets/scenes/SceneGame.scene"
+        "launchScene": "db://assets/scenes/SceneLobby.scene"
     },
     "screen": {
         "exactFitScreen": true,
@@ -113,11 +113,16 @@
             {
                 "index": 1,
                 "name": "Car"
+            },
+            {
+                "index": 2,
+                "name": "Ground"
             }
         ],
         "collisionMatrix": {
             "0": 0,
-            "1": 2
+            "1": 6,
+            "2": 2
         }
     }
 }
